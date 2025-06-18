@@ -11,6 +11,7 @@ import {
   Edge,
   Node,
   BackgroundVariant,
+  ConnectionMode,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Button } from '@/components/ui/button';
@@ -207,7 +208,7 @@ const FlowEditor = () => {
           nodeTypes={nodeTypes}
           fitView
           attributionPosition="top-right"
-          connectionMode="loose"
+          connectionMode={ConnectionMode.Loose}
           snapToGrid={true}
           snapGrid={[15, 15]}
         >
