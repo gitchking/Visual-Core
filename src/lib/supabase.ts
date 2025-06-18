@@ -3,6 +3,9 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key-here';
 
+// Get the site URL from environment or use current origin
+const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
+
 // Check if we have valid Supabase credentials
 const hasValidCredentials = supabaseUrl !== 'https://your-project.supabase.co' && 
                            supabaseAnonKey !== 'your-anon-key-here' &&
@@ -62,7 +65,7 @@ export const auth = {
         password,
         options: {
           data: userData,
-          emailRedirectTo: `${window.location.origin}/auth/callback`
+          emailRedirectTo: `${siteUrl}/auth/callback`
         }
       });
       
@@ -129,7 +132,7 @@ export const auth = {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`
+          redirectTo: `${siteUrl}/auth/callback`
         }
       });
       return { data, error };
@@ -222,7 +225,7 @@ export const auth = {
 
     try {
       const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`
+        redirectTo: `${siteUrl}/auth/reset-password`
       });
       return { data, error };
     } catch (error) {
