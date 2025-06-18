@@ -10,15 +10,15 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-red-500 text-white border-black shadow-[4px_4px_0px_0px_black] hover:shadow-[6px_6px_0px_0px_black] hover:translate-x-[-2px] hover:translate-y-[-2px] active:shadow-[2px_2px_0px_0px_black] active:translate-x-[1px] active:translate-y-[1px] transition-all hover:bg-red-600",
+        default: "bg-purple-accent text-white border-black shadow-[4px_4px_0px_0px_black] hover:shadow-[6px_6px_0px_0px_black] hover:translate-x-[-2px] hover:translate-y-[-2px] active:shadow-[2px_2px_0px_0px_black] active:translate-x-[1px] active:translate-y-[1px] transition-all",
         destructive:
           "bg-destructive text-destructive-foreground border-black shadow-[4px_4px_0px_0px_black] hover:shadow-[6px_6px_0px_0px_black] hover:translate-x-[-2px] hover:translate-y-[-2px] active:shadow-[2px_2px_0px_0px_black] active:translate-x-[1px] active:translate-y-[1px] transition-all",
         outline:
-          "border-black bg-background hover:bg-red-500 hover:text-white shadow-[4px_4px_0px_0px_black] hover:shadow-[6px_6px_0px_0px_black] hover:translate-x-[-2px] hover:translate-y-[-2px] active:shadow-[2px_2px_0px_0px_black] active:translate-x-[1px] active:translate-y-[1px] transition-all",
+          "border-black bg-background hover:bg-purple-accent hover:text-white shadow-[4px_4px_0px_0px_black] hover:shadow-[6px_6px_0px_0px_black] hover:translate-x-[-2px] hover:translate-y-[-2px] active:shadow-[2px_2px_0px_0px_black] active:translate-x-[1px] active:translate-y-[1px] transition-all",
         secondary:
-          "bg-red-500 text-white border-black shadow-[4px_4px_0px_0px_black] hover:shadow-[6px_6px_0px_0px_black] hover:translate-x-[-2px] hover:translate-y-[-2px] active:shadow-[2px_2px_0px_0px_black] active:translate-x-[1px] active:translate-y-[1px] transition-all hover:bg-red-600",
-        ghost: "border-transparent hover:bg-red-500 hover:text-white",
-        link: "text-red-500 underline-offset-4 hover:underline border-transparent",
+          "bg-purple-accent text-white border-black shadow-[4px_4px_0px_0px_black] hover:shadow-[6px_6px_0px_0px_black] hover:translate-x-[-2px] hover:translate-y-[-2px] active:shadow-[2px_2px_0px_0px_black] active:translate-x-[1px] active:translate-y-[1px] transition-all",
+        ghost: "border-transparent hover:bg-purple-accent hover:text-white",
+        link: "text-purple-accent underline-offset-4 hover:underline border-transparent",
       },
       size: {
         default: "h-10 px-4 py-2",

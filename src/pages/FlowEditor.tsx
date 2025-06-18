@@ -177,7 +177,7 @@ const FlowEditor = () => {
             <Button 
               onClick={addNewTodo} 
               size="sm"
-              className="neo-brutal bg-red-500 hover:bg-red-600 text-white font-bold flex-1 sm:flex-none"
+              className="neo-brutal-pink bg-pink-accent hover:bg-pink-accent text-white font-bold flex-1 sm:flex-none"
             >
               <Plus size={14} className="mr-1 sm:mr-2" />
               <span className="hidden sm:inline">Add Todo</span>
@@ -186,7 +186,7 @@ const FlowEditor = () => {
             <Button 
               onClick={refreshTodos} 
               size="sm"
-              className="neo-brutal bg-red-500 hover:bg-red-600 text-white font-bold flex-1 sm:flex-none"
+              className="neo-brutal-blue bg-blue-accent hover:bg-blue-accent text-white font-bold flex-1 sm:flex-none"
             >
               <RefreshCw size={14} className="mr-1 sm:mr-2" />
               <span className="hidden sm:inline">Refresh</span>
@@ -207,9 +207,9 @@ const FlowEditor = () => {
           <Button 
             onClick={saveFlow} 
             size="sm"
-            className="neo-brutal bg-red-500 hover:bg-red-600 text-white font-bold flex-1 sm:flex-none"
+            className="neo-brutal-purple bg-purple-accent hover:bg-purple-accent text-white font-bold flex-1 sm:flex-none"
           >
-            <Cherry size={14} className="mr-1 sm:mr-2" />
+            <Save size={14} className="mr-1 sm:mr-2" />
             <span className="hidden sm:inline">Save Flow</span>
             <span className="sm:hidden">Save</span>
           </Button>
