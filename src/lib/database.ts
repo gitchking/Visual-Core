@@ -1,19 +1,59 @@
-import initSqlJs from 'sql.js';
+import initSqlJs, { Database } from 'sql.js';
 
-let SQL: any = null;
-let db: any = null;
+let db: Database | null = null;
+
+interface User {
+  id: string;
+  email: string;
+  password: string;
+  username?: string;
+  full_name?: string;
+  gender?: string;
+  bio?: string;
+  website?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface Profile {
+  id: string;
+  user_id: string;
+  username?: string;
+  full_name?: string;
+  gender?: string;
+  bio?: string;
+  website?: string;
+  updated_at: string;
+}
+
+interface CreateUserData {
+  id: string;
+  email: string;
+  password: string;
+  username?: string;
+  full_name?: string;
+  gender?: string;
+  bio?: string;
+  website?: string;
+}
+
+interface UpdateProfileData {
+  username?: string;
+  full_name?: string;
+  gender?: string;
+  bio?: string;
+  website?: string;
+}
 
 export const initDatabase = async () => {
   console.log('Initializing database...');
-  if (!SQL) {
+  if (!db) {
     console.log('Loading SQL.js...');
-    SQL = await initSqlJs({
+    const SQL = await initSqlJs({
       locateFile: (file: string) => `https://sql.js.org/dist/${file}`
     });
     console.log('SQL.js loaded');
-  }
 
-  if (!db) {
     console.log('Setting up database...');
     // Try to load existing database from localStorage
     const savedDb = localStorage.getItem('visualflow-db');
@@ -48,7 +88,7 @@ const checkAndMigrateDatabase = async () => {
     stmt.free();
     
     console.log('Threads table columns:', columns);
-    const hasWebsiteUrl = columns.some((col: any) => col.name === 'website_url');
+    const hasWebsiteUrl = columns.some((col: { name: string }) => col.name === 'website_url');
     if (!hasWebsiteUrl) {
       console.log('Adding website_url column to threads table...');
       db.run('ALTER TABLE threads ADD COLUMN website_url TEXT');
@@ -81,12 +121,26 @@ const initializeTables = async () => {
   // Users table
   db.run(`
     CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT UNIQUE NOT NULL,
+      id TEXT PRIMARY KEY,
       email TEXT UNIQUE NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      username TEXT,
+      full_name TEXT,
+      gender TEXT,
+      bio TEXT,
+      website TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
     )
   `);
+
+  // Migration: add password column if missing
+  try {
+    db.run('ALTER TABLE users ADD COLUMN password TEXT');
+  } catch (error) {
+    if (!(error instanceof Error && error.message.includes('duplicate column name'))) {
+      console.log('Error adding password column:', error);
+    }
+  }
 
   // Profiles table
   db.run(`
@@ -197,27 +251,37 @@ export const getDatabase = () => db;
 
 // User management functions
 export const userService = {
-  // Create a new user
-  createUser: (userData: {
-    id: string;
-    email: string;
-    password: string;
-    username?: string;
-    full_name?: string;
-    gender?: string;
-    bio?: string;
-    website?: string;
-  }) => {
-    const db = getDatabase();
-    const now = new Date().toISOString();
+  async init() {
+    if (!db) {
+      const SQL = await initSqlJs({
+        locateFile: file => `https://sql.js.org/dist/${file}`
+      });
+      
+      // Try to load existing database from localStorage
+      const savedDb = localStorage.getItem('nodehub_db');
+      if (savedDb) {
+        const uint8Array = new Uint8Array(savedDb.split(',').map(Number));
+        db = new SQL.Database(uint8Array);
+      } else {
+        db = new SQL.Database();
+        createTables();
+      }
+    }
+  },
+
+  createUser(userData: CreateUserData) {
+    if (!db) throw new Error('Database not initialized');
     
     try {
-      db.run(`
+      const now = new Date().toISOString();
+      const stmt = db.prepare(`
         INSERT INTO users (id, email, password, username, full_name, gender, bio, website, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `, [
+      `);
+      
+      stmt.run([
         userData.id,
-        userData.email.toLowerCase(),
+        userData.email,
         userData.password,
         userData.username || null,
         userData.full_name || null,
@@ -227,13 +291,17 @@ export const userService = {
         now,
         now
       ]);
-
+      
+      stmt.free();
+      
       // Create profile
-      db.run(`
+      const profileStmt = db.prepare(`
         INSERT INTO profiles (id, user_id, username, full_name, gender, bio, website, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `, [
-        'profile_' + userData.id,
+      `);
+      
+      profileStmt.run([
+        `profile_${userData.id}`,
         userData.id,
         userData.username || null,
         userData.full_name || null,
@@ -242,200 +310,251 @@ export const userService = {
         userData.website || null,
         now
       ]);
-
+      
+      profileStmt.free();
+      
+      // Save to localStorage
+      const data = db.export();
+      localStorage.setItem('nodehub_db', Array.from(data).toString());
+      
       return { success: true, error: null };
     } catch (error) {
-      console.error('Error creating user:', error);
-      return { success: false, error };
+      return { success: false, error: { message: 'Failed to create user' } };
     }
   },
 
-  // Get user by email and password
-  authenticateUser: (email: string, password: string) => {
-    const db = getDatabase();
+  getUserById(userId: string) {
+    if (!db) throw new Error('Database not initialized');
+    
+    try {
+      const stmt = db.prepare('SELECT * FROM users WHERE id = ?');
+      stmt.run([userId]);
+      const result = stmt.getAsObject() as User;
+      stmt.free();
+      
+      if (result && result.id) {
+        return { user: result, error: null };
+      } else {
+        return { user: null, error: { message: 'User not found' } };
+      }
+    } catch (error) {
+      return { user: null, error: { message: 'Failed to get user' } };
+    }
+  },
+
+  authenticateUser(email: string, password: string) {
+    if (!db) throw new Error('Database not initialized');
+    
+    try {
+      const stmt = db.prepare('SELECT * FROM users WHERE email = ? AND password = ?');
+      stmt.run([email, password]);
+      const result = stmt.getAsObject() as User;
+      stmt.free();
+      
+      if (result && result.id) {
+        return { user: result, error: null };
+      } else {
+        return { user: null, error: { message: 'Invalid email or password' } };
+      }
+    } catch (error) {
+      return { user: null, error: { message: 'Authentication failed' } };
+    }
+  },
+
+  userExists(email: string) {
+    if (!db) throw new Error('Database not initialized');
+    
+    try {
+      const stmt = db.prepare('SELECT COUNT(*) as count FROM users WHERE email = ?');
+      stmt.run([email]);
+      const result = stmt.getAsObject() as { count: number };
+      stmt.free();
+      
+      return result.count > 0;
+    } catch (error) {
+      return false;
+    }
+  },
+
+  getUserProfile(userId: string) {
+    if (!db) throw new Error('Database not initialized');
+    
+    try {
+      const stmt = db.prepare('SELECT * FROM profiles WHERE user_id = ?');
+      stmt.run([userId]);
+      const result = stmt.getAsObject() as Profile;
+      stmt.free();
+      
+      if (result && result.id) {
+        return { profile: result, error: null };
+      } else {
+        return { profile: null, error: { message: 'Profile not found' } };
+      }
+    } catch (error) {
+      return { profile: null, error: { message: 'Failed to get profile' } };
+    }
+  },
+
+  updateProfile(userId: string, updates: UpdateProfileData) {
+    if (!db) throw new Error('Database not initialized');
+    
+    try {
+      const now = new Date().toISOString();
+      const fields = Object.keys(updates).filter(key => updates[key as keyof UpdateProfileData] !== undefined);
+      
+      if (fields.length === 0) {
+        return { success: false, error: { message: 'No updates provided' } };
+      }
+      
+      const setClause = fields.map(field => `${field} = ?`).join(', ');
+      const values = fields.map(field => updates[field as keyof UpdateProfileData]).concat([now, userId]);
+      
+      const stmt = db.prepare(`
+        UPDATE profiles 
+        SET ${setClause}, updated_at = ?
+        WHERE user_id = ?
+      `);
+      
+      stmt.run(values);
+      stmt.free();
+      
+      // Also update user table if username or full_name changed
+      const userFields = ['username', 'full_name'].filter(field => updates[field as keyof UpdateProfileData] !== undefined);
+      if (userFields.length > 0) {
+        const userSetClause = userFields.map(field => `${field} = ?`).join(', ');
+        const userValues = userFields.map(field => updates[field as keyof UpdateProfileData]).concat([now, userId]);
+        
+        const userStmt = db.prepare(`
+          UPDATE users 
+          SET ${userSetClause}, updated_at = ?
+          WHERE id = ?
+        `);
+        
+        userStmt.run(userValues);
+        userStmt.free();
+      }
+      
+      // Save to localStorage
+      const data = db.export();
+      localStorage.setItem('nodehub_db', Array.from(data).toString());
+      
+      return { success: true, error: null };
+    } catch (error) {
+      return { success: false, error: { message: 'Failed to update profile' } };
+    }
+  },
+
+  getAllUsers() {
+    if (!db) throw new Error('Database not initialized');
+    
+    try {
+      const stmt = db.prepare('SELECT * FROM users ORDER BY created_at DESC');
+      const results: User[] = [];
+      
+      while (stmt.step()) {
+        results.push(stmt.getAsObject() as User);
+      }
+      
+      stmt.free();
+      return { users: results, error: null };
+    } catch (error) {
+      return { users: [], error: { message: 'Failed to get users' } };
+    }
+  },
+
+  deleteUser(userId: string) {
+    if (!db) throw new Error('Database not initialized');
+    
+    try {
+      // Delete profile first (foreign key constraint)
+      const profileStmt = db.prepare('DELETE FROM profiles WHERE user_id = ?');
+      profileStmt.run([userId]);
+      profileStmt.free();
+      
+      // Delete user
+      const userStmt = db.prepare('DELETE FROM users WHERE id = ?');
+      userStmt.run([userId]);
+      userStmt.free();
+      
+      // Save to localStorage
+      const data = db.export();
+      localStorage.setItem('nodehub_db', Array.from(data).toString());
+      
+      return { success: true, error: null };
+    } catch (error) {
+      return { success: false, error: { message: 'Failed to delete user' } };
+    }
+  },
+
+  searchUsers(query: string) {
+    if (!db) throw new Error('Database not initialized');
     
     try {
       const stmt = db.prepare(`
         SELECT * FROM users 
-        WHERE email = ? AND password = ?
-      `);
-      stmt.bind([email.toLowerCase(), password]);
-      
-      if (stmt.step()) {
-        const user = stmt.getAsObject();
-        stmt.free();
-        return { user, error: null };
-      }
-      
-      stmt.free();
-      return { user: null, error: { message: 'Invalid email or password' } };
-    } catch (error) {
-      console.error('Error authenticating user:', error);
-      return { user: null, error };
-    }
-  },
-
-  // Get user by ID
-  getUserById: (userId: string) => {
-    const db = getDatabase();
-    
-    try {
-      const stmt = db.prepare('SELECT * FROM users WHERE id = ?');
-      stmt.bind([userId]);
-      
-      if (stmt.step()) {
-        const user = stmt.getAsObject();
-        stmt.free();
-        return { user, error: null };
-      }
-      
-      stmt.free();
-      return { user: null, error: { message: 'User not found' } };
-    } catch (error) {
-      console.error('Error getting user:', error);
-      return { user: null, error };
-    }
-  },
-
-  // Get user profile
-  getUserProfile: (userId: string) => {
-    const db = getDatabase();
-    
-    try {
-      const stmt = db.prepare('SELECT * FROM profiles WHERE user_id = ?');
-      stmt.bind([userId]);
-      
-      if (stmt.step()) {
-        const profile = stmt.getAsObject();
-        stmt.free();
-        return { profile, error: null };
-      }
-      
-      stmt.free();
-      return { profile: null, error: { message: 'Profile not found' } };
-    } catch (error) {
-      console.error('Error getting profile:', error);
-      return { profile: null, error };
-    }
-  },
-
-  // Update user profile
-  updateProfile: (userId: string, profileData: {
-    username?: string;
-    full_name?: string;
-    gender?: string;
-    bio?: string;
-    website?: string;
-  }) => {
-    const db = getDatabase();
-    const now = new Date().toISOString();
-    
-    try {
-      // Update user table
-      const userStmt = db.prepare(`
-        UPDATE users 
-        SET username = ?, full_name = ?, gender = ?, bio = ?, website = ?, updated_at = ?
-        WHERE id = ?
-      `);
-      userStmt.run([
-        profileData.username || null,
-        profileData.full_name || null,
-        profileData.gender || null,
-        profileData.bio || null,
-        profileData.website || null,
-        now,
-        userId
-      ]);
-      userStmt.free();
-
-      // Update profile table
-      const profileStmt = db.prepare(`
-        UPDATE profiles 
-        SET username = ?, full_name = ?, gender = ?, bio = ?, website = ?, updated_at = ?
-        WHERE user_id = ?
-      `);
-      profileStmt.run([
-        profileData.username || null,
-        profileData.full_name || null,
-        profileData.gender || null,
-        profileData.bio || null,
-        profileData.website || null,
-        now,
-        userId
-      ]);
-      profileStmt.free();
-
-      return { success: true, error: null };
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      return { success: false, error };
-    }
-  },
-
-  // Get all users (for admin purposes)
-  getAllUsers: () => {
-    const db = getDatabase();
-    
-    try {
-      const stmt = db.prepare(`
-        SELECT u.*, p.username as profile_username, p.full_name as profile_full_name
-        FROM users u
-        LEFT JOIN profiles p ON u.id = p.user_id
-        ORDER BY u.created_at DESC
+        WHERE email LIKE ? OR username LIKE ? OR full_name LIKE ?
+        ORDER BY created_at DESC
       `);
       
-      const users = [];
+      const searchTerm = `%${query}%`;
+      stmt.run([searchTerm, searchTerm, searchTerm]);
+      
+      const results: User[] = [];
       while (stmt.step()) {
-        const user = stmt.getAsObject();
-        // Don't include password in the result
-        delete user.password;
-        users.push(user);
-      }
-      stmt.free();
-      
-      return users;
-    } catch (error) {
-      console.error('Error getting all users:', error);
-      return [];
-    }
-  },
-
-  // Delete user
-  deleteUser: (userId: string) => {
-    const db = getDatabase();
-    
-    try {
-      // Delete user (profiles will be deleted automatically due to CASCADE)
-      const stmt = db.prepare('DELETE FROM users WHERE id = ?');
-      stmt.run([userId]);
-      stmt.free();
-      
-      return true;
-    } catch (error) {
-      console.error('Error deleting user:', error);
-      return false;
-    }
-  },
-
-  // Check if user exists
-  userExists: (email: string) => {
-    const db = getDatabase();
-    
-    try {
-      const stmt = db.prepare('SELECT COUNT(*) as count FROM users WHERE email = ?');
-      stmt.bind([email.toLowerCase()]);
-      
-      if (stmt.step()) {
-        const result = stmt.getAsObject();
-        stmt.free();
-        return result.count > 0;
+        results.push(stmt.getAsObject() as User);
       }
       
       stmt.free();
-      return false;
+      return { users: results, error: null };
     } catch (error) {
-      console.error('Error checking if user exists:', error);
-      return false;
+      return { users: [], error: { message: 'Failed to search users' } };
     }
   }
 };
+
+function createTables() {
+  if (!db) throw new Error('Database not initialized');
+  
+  // Create users table
+  db.run(`
+    CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY,
+      email TEXT UNIQUE NOT NULL,
+      username TEXT,
+      full_name TEXT,
+      gender TEXT,
+      bio TEXT,
+      website TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    )
+  `);
+  
+  // Create profiles table
+  db.run(`
+    CREATE TABLE IF NOT EXISTS profiles (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      username TEXT,
+      full_name TEXT,
+      gender TEXT,
+      bio TEXT,
+      website TEXT,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+    )
+  `);
+  
+  // Create admin user if not exists
+  const adminExists = userService.userExists('admin@nodehub.com');
+  if (!adminExists) {
+    userService.createUser({
+      id: 'admin_user',
+      email: 'admin@nodehub.com',
+      password: 'admin123',
+      username: 'admin',
+      full_name: 'Administrator',
+      bio: 'System Administrator'
+    });
+  }
+}
