@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Link, useLocation } from 'react-router-dom';
@@ -12,6 +11,7 @@ import {
   Megaphone,
   Menu
 } from 'lucide-react';
+import { Cherry } from 'lucide-react';
 
 const Navigation = () => {
   const location = useLocation();
@@ -23,10 +23,10 @@ const Navigation = () => {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
-            <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg flex items-center justify-center">
-              <Workflow className="w-3 h-3 sm:w-5 sm:h-5 text-white" />
+            <div className="w-6 h-6 sm:w-8 sm:h-8 bg-red-500 rounded-lg flex items-center justify-center">
+              <Cherry className="w-3 h-3 sm:w-5 sm:h-5 text-white" />
             </div>
-            <span className="text-lg sm:text-xl font-bold text-gradient-purple">VisualFlow</span>
+            <span className="text-lg sm:text-xl font-bold text-red-500">VisualFlow</span>
           </Link>
 
           {/* Mobile Menu Button */}
@@ -41,8 +41,8 @@ const Navigation = () => {
           <div className="hidden md:flex items-center space-x-6 lg:space-x-8">
             <Link 
               to="/todos" 
-              className={`text-sm font-medium hover:text-purple-600 transition-colors flex items-center gap-2 ${
-                location.pathname === '/todos' ? 'text-purple-600' : ''
+              className={`text-sm font-medium hover:text-red-600 transition-colors flex items-center gap-2 ${
+                location.pathname === '/todos' ? 'text-red-600' : ''
               }`}
             >
               <CheckSquare className="w-4 h-4" />
@@ -51,8 +51,8 @@ const Navigation = () => {
             </Link>
             <Link 
               to="/flow-editor" 
-              className={`text-sm font-medium hover:text-purple-600 transition-colors flex items-center gap-2 ${
-                location.pathname === '/flow-editor' ? 'text-purple-600' : ''
+              className={`text-sm font-medium hover:text-red-600 transition-colors flex items-center gap-2 ${
+                location.pathname === '/flow-editor' ? 'text-red-600' : ''
               }`}
             >
               <Workflow className="w-4 h-4" />
@@ -61,8 +61,8 @@ const Navigation = () => {
             </Link>
             <Link 
               to="/analytics" 
-              className={`text-sm font-medium hover:text-purple-600 transition-colors flex items-center gap-2 ${
-                location.pathname === '/analytics' ? 'text-purple-600' : ''
+              className={`text-sm font-medium hover:text-red-600 transition-colors flex items-center gap-2 ${
+                location.pathname === '/analytics' ? 'text-red-600' : ''
               }`}
             >
               <BarChart3 className="w-4 h-4" />
@@ -70,8 +70,8 @@ const Navigation = () => {
             </Link>
             <Link 
               to="/community" 
-              className={`text-sm font-medium hover:text-purple-600 transition-colors flex items-center gap-2 ${
-                location.pathname === '/community' ? 'text-purple-600' : ''
+              className={`text-sm font-medium hover:text-red-600 transition-colors flex items-center gap-2 ${
+                location.pathname === '/community' ? 'text-red-600' : ''
               }`}
             >
               <Users className="w-4 h-4" />
@@ -79,8 +79,8 @@ const Navigation = () => {
             </Link>
             <Link 
               to="/studio" 
-              className={`text-sm font-medium hover:text-purple-600 transition-colors flex items-center gap-2 ${
-                location.pathname === '/studio' ? 'text-purple-600' : ''
+              className={`text-sm font-medium hover:text-red-600 transition-colors flex items-center gap-2 ${
+                location.pathname === '/studio' ? 'text-red-600' : ''
               }`}
             >
               <Megaphone className="w-4 h-4" />
@@ -99,7 +99,8 @@ const Navigation = () => {
                 <Settings className="w-4 h-4" />
               </Button>
             </Link>
-            <Button size="sm" className="bg-purple-accent hover:bg-purple-accent/90 text-white neo-brutal-purple">
+            <Button size="sm" className="bg-red-500 hover:bg-red-600 text-white neo-brutal">
+              <Cherry className="w-4 h-4 mr-2" />
               <span className="hidden lg:inline">Get Started</span>
               <span className="lg:hidden">Start</span>
             </Button>
@@ -112,8 +113,8 @@ const Navigation = () => {
             <div className="flex flex-col space-y-3 pt-4">
               <Link 
                 to="/todos" 
-                className={`text-sm font-medium hover:text-purple-600 transition-colors flex items-center gap-2 ${
-                  location.pathname === '/todos' ? 'text-purple-600' : ''
+                className={`text-sm font-medium hover:text-red-600 transition-colors flex items-center gap-2 ${
+                  location.pathname === '/todos' ? 'text-red-600' : ''
                 }`}
                 onClick={() => setIsMenuOpen(false)}
               >
@@ -122,8 +123,8 @@ const Navigation = () => {
               </Link>
               <Link 
                 to="/flow-editor" 
-                className={`text-sm font-medium hover:text-purple-600 transition-colors flex items-center gap-2 ${
-                  location.pathname === '/flow-editor' ? 'text-purple-600' : ''
+                className={`text-sm font-medium hover:text-red-600 transition-colors flex items-center gap-2 ${
+                  location.pathname === '/flow-editor' ? 'text-red-600' : ''
                 }`}
                 onClick={() => setIsMenuOpen(false)}
               >
@@ -132,8 +133,8 @@ const Navigation = () => {
               </Link>
               <Link 
                 to="/analytics" 
-                className={`text-sm font-medium hover:text-purple-600 transition-colors flex items-center gap-2 ${
-                  location.pathname === '/analytics' ? 'text-purple-600' : ''
+                className={`text-sm font-medium hover:text-red-600 transition-colors flex items-center gap-2 ${
+                  location.pathname === '/analytics' ? 'text-red-600' : ''
                 }`}
                 onClick={() => setIsMenuOpen(false)}
               >
@@ -142,8 +143,8 @@ const Navigation = () => {
               </Link>
               <Link 
                 to="/community" 
-                className={`text-sm font-medium hover:text-purple-600 transition-colors flex items-center gap-2 ${
-                  location.pathname === '/community' ? 'text-purple-600' : ''
+                className={`text-sm font-medium hover:text-red-600 transition-colors flex items-center gap-2 ${
+                  location.pathname === '/community' ? 'text-red-600' : ''
                 }`}
                 onClick={() => setIsMenuOpen(false)}
               >
@@ -152,8 +153,8 @@ const Navigation = () => {
               </Link>
               <Link 
                 to="/studio" 
-                className={`text-sm font-medium hover:text-purple-600 transition-colors flex items-center gap-2 ${
-                  location.pathname === '/studio' ? 'text-purple-600' : ''
+                className={`text-sm font-medium hover:text-red-600 transition-colors flex items-center gap-2 ${
+                  location.pathname === '/studio' ? 'text-red-600' : ''
                 }`}
                 onClick={() => setIsMenuOpen(false)}
               >
@@ -167,7 +168,8 @@ const Navigation = () => {
                     DevTool
                   </Button>
                 </Link>
-                <Button size="sm" className="bg-purple-accent hover:bg-purple-accent/90 text-white neo-brutal-purple w-full">
+                <Button size="sm" className="bg-red-500 hover:bg-red-600 text-white neo-brutal w-full">
+                  <Cherry className="w-4 h-4 mr-2" />
                   Get Started
                 </Button>
               </div>
