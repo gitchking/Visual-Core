@@ -13,8 +13,13 @@ const AuthCallback: React.FC = () => {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
+        console.log('🔍 AuthCallback Debug:');
+        console.log('Supabase client exists:', !!supabase);
+        console.log('URL search params:', Object.fromEntries(searchParams.entries()));
+        
         // Check if we have a valid Supabase client
         if (!supabase) {
+          console.error('❌ Supabase client is null - credentials may be invalid');
           setStatus('error');
           setMessage('Authentication service not configured. Please contact support.');
           setTimeout(() => navigate('/'), 3000);
@@ -22,7 +27,11 @@ const AuthCallback: React.FC = () => {
         }
 
         // Handle the auth callback from URL parameters
+        console.log('🔄 Getting session...');
         const { data, error } = await supabase.auth.getSession();
+        
+        console.log('📊 Session data:', data);
+        console.log('❌ Session error:', error);
         
         if (error) {
           console.error('Auth callback error:', error);
@@ -33,6 +42,7 @@ const AuthCallback: React.FC = () => {
         }
 
         if (data?.session) {
+          console.log('✅ Session found, user authenticated');
           setStatus('success');
           setMessage('Authentication successful! Redirecting...');
           setTimeout(() => navigate('/'), 1500);
@@ -40,6 +50,10 @@ const AuthCallback: React.FC = () => {
           // Check if there are error parameters in the URL
           const errorParam = searchParams.get('error');
           const errorDescription = searchParams.get('error_description');
+          
+          console.log('⚠️ No session found');
+          console.log('Error param:', errorParam);
+          console.log('Error description:', errorDescription);
           
           if (errorParam) {
             setStatus('error');

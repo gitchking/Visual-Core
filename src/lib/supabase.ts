@@ -6,11 +6,19 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key
 // Get the site URL from environment or use current origin
 const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
 
+// Debug logging
+console.log('🔧 Supabase Configuration Debug:');
+console.log('VITE_SUPABASE_URL:', supabaseUrl);
+console.log('VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? '***' + supabaseAnonKey.slice(-4) : 'missing');
+console.log('VITE_SITE_URL:', siteUrl);
+
 // Check if we have valid Supabase credentials
 const hasValidCredentials = supabaseUrl !== 'https://your-project.supabase.co' && 
                            supabaseAnonKey !== 'your-anon-key-here' &&
                            supabaseUrl.startsWith('https://') &&
                            supabaseAnonKey.startsWith('eyJ');
+
+console.log('✅ Has valid credentials:', hasValidCredentials);
 
 // Validate configuration
 if (!hasValidCredentials) {
@@ -26,6 +34,8 @@ if (!hasValidCredentials) {
 }
 
 export const supabase = hasValidCredentials ? createClient(supabaseUrl, supabaseAnonKey) : null;
+
+console.log('🚀 Supabase client created:', !!supabase);
 
 // Local storage fallback for when Supabase is not configured
 const localStorageAuth = {
