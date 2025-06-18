@@ -80,8 +80,8 @@ const AppSidebar = () => {
                   <SidebarMenuButton 
                     asChild 
                     isActive={location.pathname === item.url}
-                    className={`text-black hover:bg-purple-accent hover:text-white ${
-                      location.pathname === item.url ? 'bg-purple-accent text-white' : ''
+                    className={`text-black hover:bg-purple-accent hover:text-white transition-colors ${
+                      location.pathname === item.url ? 'bg-black text-white' : ''
                     }`}
                   >
                     <Link to={item.url}>
@@ -103,8 +103,8 @@ const AppSidebar = () => {
                 <SidebarMenuButton 
                   asChild 
                   isActive={location.pathname === '/dev'}
-                  className={`text-black hover:bg-purple-accent hover:text-white ${
-                    location.pathname === '/dev' ? 'bg-purple-accent text-white' : ''
+                  className={`text-black hover:bg-purple-accent hover:text-white transition-colors ${
+                    location.pathname === '/dev' ? 'bg-black text-white' : ''
                   }`}
                 >
                   <Link to="/dev">

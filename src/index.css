@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -40,8 +41,8 @@
     --sidebar-foreground: 0 0 0;
     --sidebar-primary: 147 51 234;
     --sidebar-primary-foreground: 255 255 255;
-    --sidebar-accent: 248 250 252;
-    --sidebar-accent-foreground: 0 0 0;
+    --sidebar-accent: 0 0 0;
+    --sidebar-accent-foreground: 255 255 255;
     --sidebar-border: 147 51 234;
     --sidebar-ring: 147 51 234;
 
@@ -84,8 +85,8 @@
     --sidebar-foreground: 255 255 255;
     --sidebar-primary: 255 255 255;
     --sidebar-primary-foreground: 0 0 0;
-    --sidebar-accent: 38 38 38;
-    --sidebar-accent-foreground: 255 255 255;
+    --sidebar-accent: 255 255 255;
+    --sidebar-accent-foreground: 0 0 0;
     --sidebar-border: 255 255 255;
     --sidebar-ring: 255 255 255;
   }
@@ -140,74 +141,74 @@
     border-color: rgb(var(--purple-accent));
   }
 
-  /* Neobrutalism punch effects - all shadows with purple accent */
+  /* Neobrutalism punch effects - all shadows BLACK */
   .neo-brutal {
-    border: 3px solid rgb(var(--purple-accent));
-    box-shadow: 4px 4px 0px 0px rgb(var(--purple-accent));
+    border: 3px solid black;
+    box-shadow: 4px 4px 0px 0px black;
     transition: all 0.2s ease;
   }
 
   .neo-brutal:hover {
     transform: translate(-2px, -2px);
-    box-shadow: 6px 6px 0px 0px rgb(var(--purple-accent));
+    box-shadow: 6px 6px 0px 0px black;
   }
 
   .neo-brutal:active {
     transform: translate(1px, 1px);
-    box-shadow: 2px 2px 0px 0px rgb(var(--purple-accent));
+    box-shadow: 2px 2px 0px 0px black;
   }
 
   .neo-brutal-pink {
-    border: 3px solid rgb(var(--purple-accent));
-    box-shadow: 4px 4px 0px 0px rgb(var(--purple-accent));
+    border: 3px solid black;
+    box-shadow: 4px 4px 0px 0px black;
     transition: all 0.2s ease;
   }
 
   .neo-brutal-pink:hover {
     transform: translate(-2px, -2px);
-    box-shadow: 6px 6px 0px 0px rgb(var(--purple-accent));
+    box-shadow: 6px 6px 0px 0px black;
   }
 
   .neo-brutal-pink:active {
     transform: translate(1px, 1px);
-    box-shadow: 2px 2px 0px 0px rgb(var(--purple-accent));
+    box-shadow: 2px 2px 0px 0px black;
   }
 
   .neo-brutal-blue {
-    border: 3px solid rgb(var(--purple-accent));
-    box-shadow: 4px 4px 0px 0px rgb(var(--purple-accent));
+    border: 3px solid black;
+    box-shadow: 4px 4px 0px 0px black;
     transition: all 0.2s ease;
   }
 
   .neo-brutal-blue:hover {
     transform: translate(-2px, -2px);
-    box-shadow: 6px 6px 0px 0px rgb(var(--purple-accent));
+    box-shadow: 6px 6px 0px 0px black;
   }
 
   .neo-brutal-blue:active {
     transform: translate(1px, 1px);
-    box-shadow: 2px 2px 0px 0px rgb(var(--purple-accent));
+    box-shadow: 2px 2px 0px 0px black;
   }
 
   .neo-brutal-purple {
-    border: 3px solid rgb(var(--purple-accent));
-    box-shadow: 4px 4px 0px 0px rgb(var(--purple-accent));
+    border: 3px solid black;
+    box-shadow: 4px 4px 0px 0px black;
     transition: all 0.2s ease;
   }
 
   .neo-brutal-purple:hover {
     transform: translate(-2px, -2px);
-    box-shadow: 6px 6px 0px 0px rgb(var(--purple-accent));
+    box-shadow: 6px 6px 0px 0px black;
   }
 
   .neo-brutal-purple:active {
     transform: translate(1px, 1px);
-    box-shadow: 2px 2px 0px 0px rgb(var(--purple-accent));
+    box-shadow: 2px 2px 0px 0px black;
   }
 
   .neo-card {
-    border: 2px solid rgb(var(--purple-accent));
-    box-shadow: 3px 3px 0px 0px rgb(var(--purple-accent));
+    border: 2px solid black;
+    box-shadow: 3px 3px 0px 0px black;
     background: white;
   }
 
@@ -217,7 +218,7 @@
 
   .hover-lift:hover {
     transform: translate(-1px, -1px);
-    box-shadow: 4px 4px 0px 0px rgb(var(--purple-accent));
+    box-shadow: 4px 4px 0px 0px black;
   }
 
   /* REMOVE ALL YELLOW COLORS - Replace with white or purple */
@@ -328,6 +329,40 @@
   .bg-accent {
     background: rgb(248 250 252) !important;
   }
+
+  /* Force all box shadows to be BLACK */
+  * {
+    box-shadow: none !important;
+  }
+
+  .shadow,
+  .shadow-sm,
+  .shadow-md,
+  .shadow-lg,
+  .shadow-xl,
+  .shadow-2xl {
+    box-shadow: 4px 4px 0px 0px black !important;
+  }
+
+  .hover\:shadow:hover,
+  .hover\:shadow-sm:hover,
+  .hover\:shadow-md:hover,
+  .hover\:shadow-lg:hover,
+  .hover\:shadow-xl:hover,
+  .hover\:shadow-2xl:hover {
+    box-shadow: 6px 6px 0px 0px black !important;
+  }
+
+  /* Sidebar specific styling */
+  [data-sidebar="menu-button"][data-active="true"] {
+    background-color: black !important;
+    color: white !important;
+  }
+
+  [data-sidebar="menu-button"]:hover {
+    background-color: rgb(var(--purple-accent)) !important;
+    color: white !important;
+  }
 }
 
 /* Custom scrollbar */
@@ -340,12 +375,12 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgb(var(--purple-accent));
+  background: black;
   border-radius: 0px;
-  border: 1px solid rgb(var(--purple-accent));
+  border: 1px solid black;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgb(var(--purple-accent));
+  background: black;
   opacity: 0.8;
 }
