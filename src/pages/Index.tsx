@@ -33,7 +33,7 @@ const Index = () => {
       description: "Visualize your productivity data with interactive charts",
       icon: BarChart3,
       href: "/analytics",
-      accent: "yellow"
+      accent: "default"
     },
     {
       title: "Community",
@@ -54,13 +54,11 @@ const Index = () => {
   const getAccentClasses = (accent: string) => {
     switch (accent) {
       case 'pink':
-        return 'bg-pink-accent hover:bg-pink-accent/90 text-white';
-      case 'yellow':
-        return 'bg-yellow-accent hover:bg-yellow-accent/90 text-black';
+        return 'bg-pink-accent hover:bg-pink-accent/90 text-white neo-brutal-pink';
       case 'blue':
-        return 'bg-blue-accent hover:bg-blue-accent/90 text-white';
+        return 'bg-blue-accent hover:bg-blue-accent/90 text-white neo-brutal-blue';
       default:
-        return 'bg-foreground hover:bg-foreground/90 text-background';
+        return 'bg-foreground hover:bg-foreground/90 text-background neo-brutal';
     }
   };
 
@@ -70,20 +68,20 @@ const Index = () => {
         {/* Header */}
         <div className="text-center mb-16">
           <h1 className="text-6xl font-bold mb-6">
-            Welcome to VisualFlow
+            Apps
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Transform your productivity with visual workflows, interactive charts, and collaborative tools.
+            Build amazing applications with visual workflows and productivity tools.
           </p>
         </div>
 
         {/* Feature Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
           {features.map((feature) => (
-            <Card key={feature.title} className="hover-lift border-2 hover:border-foreground transition-all duration-300">
+            <Card key={feature.title} className="neo-card hover-lift border-2 hover:border-foreground transition-all duration-300">
               <CardHeader>
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center">
+                  <div className="w-12 h-12 bg-muted border-2 border-black neo-card flex items-center justify-center">
                     <feature.icon className="w-6 h-6" />
                   </div>
                   <CardTitle className="text-xl">{feature.title}</CardTitle>
@@ -109,19 +107,19 @@ const Index = () => {
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <Card className="text-center">
+          <Card className="text-center neo-card">
             <CardHeader>
               <CardTitle className="text-3xl font-bold">0</CardTitle>
               <CardDescription>Active Tasks</CardDescription>
             </CardHeader>
           </Card>
-          <Card className="text-center">
+          <Card className="text-center neo-card">
             <CardHeader>
               <CardTitle className="text-3xl font-bold">0</CardTitle>
               <CardDescription>Completed Flows</CardDescription>
             </CardHeader>
           </Card>
-          <Card className="text-center">
+          <Card className="text-center neo-card">
             <CardHeader>
               <CardTitle className="text-3xl font-bold">0</CardTitle>
               <CardDescription>Community Posts</CardDescription>

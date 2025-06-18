@@ -128,67 +128,68 @@
     border-color: rgb(var(--blue-accent));
   }
 
-  /* Neobrutalism punch effects */
+  /* Neobrutalism punch effects - all shadows in black */
   .neo-brutal {
-    border: 3px solid black;
-    box-shadow: 6px 6px 0px 0px black;
+    border: 3px solid #000000;
+    box-shadow: 4px 4px 0px 0px #000000;
     transition: all 0.2s ease;
   }
 
   .neo-brutal:hover {
     transform: translate(-2px, -2px);
-    box-shadow: 8px 8px 0px 0px black;
+    box-shadow: 6px 6px 0px 0px #000000;
   }
 
   .neo-brutal:active {
-    transform: translate(2px, 2px);
-    box-shadow: 2px 2px 0px 0px black;
+    transform: translate(1px, 1px);
+    box-shadow: 2px 2px 0px 0px #000000;
   }
 
   .neo-brutal-pink {
-    border: 3px solid rgb(var(--pink-accent));
-    box-shadow: 6px 6px 0px 0px rgb(var(--pink-accent));
+    border: 3px solid #000000;
+    box-shadow: 4px 4px 0px 0px #000000;
     transition: all 0.2s ease;
   }
 
   .neo-brutal-pink:hover {
     transform: translate(-2px, -2px);
-    box-shadow: 8px 8px 0px 0px rgb(var(--pink-accent));
+    box-shadow: 6px 6px 0px 0px #000000;
   }
 
   .neo-brutal-pink:active {
-    transform: translate(2px, 2px);
-    box-shadow: 2px 2px 0px 0px rgb(var(--pink-accent));
+    transform: translate(1px, 1px);
+    box-shadow: 2px 2px 0px 0px #000000;
   }
 
   .neo-brutal-blue {
-    border: 3px solid rgb(var(--blue-accent));
-    box-shadow: 6px 6px 0px 0px rgb(var(--blue-accent));
+    border: 3px solid #000000;
+    box-shadow: 4px 4px 0px 0px #000000;
     transition: all 0.2s ease;
   }
 
   .neo-brutal-blue:hover {
     transform: translate(-2px, -2px);
-    box-shadow: 8px 8px 0px 0px rgb(var(--blue-accent));
+    box-shadow: 6px 6px 0px 0px #000000;
   }
 
   .neo-brutal-blue:active {
-    transform: translate(2px, 2px);
-    box-shadow: 2px 2px 0px 0px rgb(var(--blue-accent));
+    transform: translate(1px, 1px);
+    box-shadow: 2px 2px 0px 0px #000000;
   }
 
   .neo-card {
-    border: 2px solid black;
-    box-shadow: 4px 4px 0px 0px black;
+    border: 2px solid #000000;
+    box-shadow: 3px 3px 0px 0px #000000;
     background: white;
   }
 
   .hover-lift {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
 
   .hover-lift:hover {
-    transform: translateY(-2px);
+    transform: translate(-1px, -1px);
+    box-shadow: 3px 3px 0px 0px #000000;
   }
 
   /* Remove all gradients */
