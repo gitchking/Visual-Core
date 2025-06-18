@@ -330,11 +330,7 @@
     background: rgb(248 250 252) !important;
   }
 
-  /* Force all box shadows to be BLACK */
-  * {
-    box-shadow: none !important;
-  }
-
+  /* BLACK SHADOWS FOR ALL ELEMENTS */
   .shadow,
   .shadow-sm,
   .shadow-md,
@@ -351,6 +347,13 @@
   .hover\:shadow-xl:hover,
   .hover\:shadow-2xl:hover {
     box-shadow: 6px 6px 0px 0px black !important;
+  }
+
+  /* Apply black shadows to all cards and elements by default */
+  .bg-white,
+  .bg-card,
+  .bg-background {
+    box-shadow: 3px 3px 0px 0px black !important;
   }
 
   /* Sidebar specific styling */
