@@ -18,7 +18,9 @@ Netlify will auto-detect your Vite project, but verify these settings:
 
 - **Build command**: `npm run build`
 - **Publish directory**: `dist`
-- **Base directory**: (leave empty)
+- **Base directory**: `node-hub-dashboard-57` ⚠️ **CRITICAL**
+
+**Note**: Since your Vite project is in the `node-hub-dashboard-57` subdirectory, you must set the base directory to `node-hub-dashboard-57` in Netlify's build settings. This is essential for the build to find your `package.json` and project files.
 
 ### Step 3: Set Environment Variables
 If you're using Supabase, add these environment variables in Netlify:
@@ -49,6 +51,9 @@ netlify login
 
 ### Step 3: Initialize and Deploy
 ```bash
+# Navigate to your project directory
+cd node-hub-dashboard-57
+
 # Build your project
 npm run build
 
@@ -90,6 +95,7 @@ Update your Supabase OAuth settings to include:
 1. Check build logs in Netlify dashboard
 2. Ensure all dependencies are in `package.json`
 3. Verify Node.js version compatibility
+4. **Base directory issues**: If build fails with "package.json not found", ensure base directory is set to `node-hub-dashboard-57`
 
 ### Routing Issues
 The `netlify.toml` file includes redirects for React Router. If you have routing issues:
@@ -153,4 +159,4 @@ Netlify automatically caches:
 
 You can also use this button to deploy directly:
 
-[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/gitchking/Visual-Core) 
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/gitchking/Visual-Core)

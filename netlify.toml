@@ -1,4 +1,5 @@
 [build]
+  base = "node-hub-dashboard-57"
   publish = "dist"
   command = "npm run build"
 
