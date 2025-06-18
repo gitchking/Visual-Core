@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { auth as localAuth } from '@/lib/localAuth';
+import { userService } from '@/lib/database';
 
 interface User {
   id: string;
@@ -58,19 +58,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
+    // Get initial session from localStorage (for persistence across page reloads)
     const getInitialSession = async () => {
-      const { user } = await localAuth.getCurrentUser();
-      const { session } = await localAuth.getCurrentSession();
-      
-      setSession(session);
-      setUser(user);
-      
-      if (user) {
-        await loadProfile(user.id);
+      try {
+        const currentUserId = localStorage.getItem('currentUserId');
+        if (currentUserId) {
+          const { user } = userService.getUserById(currentUserId);
+          if (user) {
+            setUser(user);
+            setSession({ user });
+            await loadProfile(user.id);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading initial session:', error);
+      } finally {
+        setLoading(false);
       }
-      
-      setLoading(false);
     };
 
     getInitialSession();
@@ -78,7 +82,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const loadProfile = async (userId: string) => {
     try {
-      const { profile, error } = await localAuth.getUserProfile(userId);
+      const { profile, error } = userService.getUserProfile(userId);
       if (error) {
         console.error('Error loading profile:', error);
         // If profile doesn't exist, create one
@@ -93,14 +97,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const createDefaultProfile = async (userId: string) => {
     try {
-      const { profile, error } = await localAuth.updateProfile(userId, {
+      const { success, error } = userService.updateProfile(userId, {
         username: `user_${userId.slice(0, 8)}`,
         full_name: '',
         bio: '',
         website: ''
       });
       
-      if (!error && profile) {
+      if (success) {
+        const { profile } = userService.getUserProfile(userId);
         setProfile(profile);
       }
     } catch (error) {
@@ -109,50 +114,113 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const signUp = async (email: string, password: string, userData?: any) => {
-    const result = await localAuth.signUp(email, password, userData);
-    if (result.data?.user) {
-      setUser(result.data.user);
-      setSession(result.data.session);
-      await loadProfile(result.data.user.id);
+    try {
+      // Check if user already exists
+      const exists = userService.userExists(email);
+      if (exists) {
+        return { data: null, error: { message: 'User with this email already exists' } };
+      }
+
+      // Create new user
+      const userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      const { success, error } = userService.createUser({
+        id: userId,
+        email,
+        password,
+        username: userData?.username,
+        full_name: userData?.full_name,
+        gender: userData?.gender,
+        bio: userData?.bio,
+        website: userData?.website
+      });
+
+      if (success) {
+        const { user } = userService.getUserById(userId);
+        const { profile } = userService.getUserProfile(userId);
+        
+        setUser(user);
+        setSession({ user });
+        setProfile(profile);
+        
+        // Store current user ID in localStorage for persistence
+        localStorage.setItem('currentUserId', userId);
+        
+        return { 
+          data: { 
+            user, 
+            session: { user } 
+          }, 
+          error: null 
+        };
+      } else {
+        return { data: null, error };
+      }
+    } catch (error) {
+      console.error('Sign up error:', error);
+      return { data: null, error };
     }
-    return result;
   };
 
   const signIn = async (email: string, password: string) => {
-    const result = await localAuth.signIn(email, password);
-    if (result.data?.user) {
-      setUser(result.data.user);
-      setSession(result.data.session);
-      await loadProfile(result.data.user.id);
+    try {
+      const { user, error } = userService.authenticateUser(email, password);
+      if (user) {
+        setUser(user);
+        setSession({ user });
+        await loadProfile(user.id);
+        
+        // Store current user ID in localStorage for persistence
+        localStorage.setItem('currentUserId', user.id);
+        
+        return { 
+          data: { 
+            user, 
+            session: { user } 
+          }, 
+          error: null 
+        };
+      } else {
+        return { data: null, error };
+      }
+    } catch (error) {
+      console.error('Sign in error:', error);
+      return { data: null, error };
     }
-    return result;
   };
 
   const signInWithOAuth = async (provider: 'google' | 'github' | 'discord') => {
-    // OAuth not supported in local auth, return error
-    return { data: null, error: { message: 'OAuth not supported in local authentication mode' } };
+    // OAuth not supported in SQLite auth, return error
+    return { data: null, error: { message: 'OAuth not supported in SQLite authentication mode' } };
   };
 
   const signOut = async () => {
-    const result = await localAuth.signOut();
     setUser(null);
     setSession(null);
     setProfile(null);
-    return result;
+    localStorage.removeItem('currentUserId');
+    return { error: null };
   };
 
   const resetPassword = async (email: string) => {
-    // For local auth, we'll just return success (in real app, you'd send email)
+    // For SQLite auth, we'll just return success (in real app, you'd send email)
     return { data: { message: 'Password reset email sent' }, error: null };
   };
 
   const updateProfile = async (updates: any) => {
     if (!user) throw new Error('No user logged in');
-    const { profile, error } = await localAuth.updateProfile(user.id, updates);
-    if (!error && profile) {
-      setProfile(profile);
+    try {
+      const { success, error } = userService.updateProfile(user.id, updates);
+      if (success) {
+        const { profile } = userService.getUserProfile(user.id);
+        setProfile(profile);
+        return { data: profile, error: null };
+      } else {
+        return { data: null, error };
+      }
+    } catch (error) {
+      console.error('Update profile error:', error);
+      return { data: null, error };
     }
-    return { data: profile, error };
   };
 
   const value = {
