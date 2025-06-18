@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   ReactFlow,
@@ -156,16 +157,16 @@ const FlowEditor = () => {
 
   if (isLoading) {
     return (
-      <div className="h-screen flex items-center justify-center">
+      <div className="h-screen flex items-center justify-center bg-white">
         <div className="text-lg neo-card p-8">Loading todos...</div>
       </div>
     );
   }
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-screen flex flex-col bg-white">
       {/* Header */}
-      <div className="bg-background border-b-2 border-black p-4 flex items-center justify-between">
+      <div className="bg-white border-b-2 border-black p-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Input
             value={flowName}
@@ -206,7 +207,7 @@ const FlowEditor = () => {
       </div>
 
       {/* Flow Editor */}
-      <div className="flex-1">
+      <div className="flex-1 bg-white">
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -219,10 +220,11 @@ const FlowEditor = () => {
           connectionMode={ConnectionMode.Loose}
           snapToGrid={true}
           snapGrid={[15, 15]}
+          style={{ backgroundColor: '#ffffff' }}
         >
           <Controls />
           <MiniMap />
-          <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
+          <Background variant={BackgroundVariant.Dots} gap={12} size={1} color="#000000" />
         </ReactFlow>
       </div>
 
