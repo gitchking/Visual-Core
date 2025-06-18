@@ -22,6 +22,6 @@
   "env": {
     "VITE_SUPABASE_URL": "https://azysnmzwcblwwswdpnnl.supabase.co",
     "VITE_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6eXNubXp3Y2Jsd3dzd2Rwbm5sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyNTg0OTYsImV4cCI6MjA2NTgzNDQ5Nn0.3e1DQPdBySzvBGLxtBbkOgn3DZje54ILdmcJnNXepMg",
-    "VITE_SITE_URL": "https://visual-core.vercel.app"
+    "VITE_SITE_URL": "https://visual-core-fxja.vercel.app"
   }
 } 
