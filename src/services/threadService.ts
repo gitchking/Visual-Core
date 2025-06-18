@@ -1,4 +1,3 @@
-
 import { getDatabase, saveDatabase } from '@/lib/database';
 
 export const threadService = {
@@ -7,23 +6,19 @@ export const threadService = {
     const stmt = db.prepare('SELECT * FROM threads ORDER BY created_at DESC');
     const threads = [];
     while (stmt.step()) {
-      const row = stmt.getAsObject();
-      threads.push({
-        ...row,
-        tags: row.tags ? JSON.parse(row.tags as string) : []
-      });
+      threads.push(stmt.getAsObject());
     }
     stmt.free();
     return threads;
   },
 
-  async createThread(thread: { title: string; content: string; tags: string[] }) {
+  async createThread(thread: { title: string; content: string; tags?: string }) {
     const db = getDatabase();
     const stmt = db.prepare(`
       INSERT INTO threads (title, content, tags, user_id)
       VALUES (?, ?, ?, 1)
     `);
-    stmt.run([thread.title, thread.content, JSON.stringify(thread.tags)]);
+    stmt.run([thread.title, thread.content, thread.tags || '']);
     stmt.free();
     saveDatabase();
   },

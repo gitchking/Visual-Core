@@ -16,12 +16,13 @@ import {
 import '@xyflow/react/dist/style.css';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Save, Plus, RefreshCw } from 'lucide-react';
+import { Save, Plus, RefreshCw, Share } from 'lucide-react';
 import { flowService } from '@/services/flowService';
 import { todoService } from '@/services/todoService';
 import { initDatabase } from '@/lib/database';
 import { useStore } from '@/stores/useStore';
 import TodoNode from '@/components/flow/TodoNode';
+import ShareDialog from '@/components/flow/ShareDialog';
 
 const nodeTypes = {
   todo: TodoNode,
@@ -33,6 +34,7 @@ const FlowEditor = () => {
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [flowName, setFlowName] = useState('Todo Flow');
   const [isLoading, setIsLoading] = useState(true);
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
 
   // Convert todos to flow nodes
   const todosToNodes = (todoList: any[]): Node[] => {
@@ -149,10 +151,20 @@ const FlowEditor = () => {
             Refresh
           </Button>
         </div>
-        <Button onClick={saveFlow} className="flex items-center gap-2">
-          <Save size={16} />
-          Save Flow
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            onClick={() => setIsShareDialogOpen(true)} 
+            variant="outline" 
+            className="flex items-center gap-2"
+          >
+            <Share size={16} />
+            Share
+          </Button>
+          <Button onClick={saveFlow} className="flex items-center gap-2">
+            <Save size={16} />
+            Save Flow
+          </Button>
+        </div>
       </div>
 
       {/* Flow Editor */}
@@ -172,6 +184,13 @@ const FlowEditor = () => {
           <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
         </ReactFlow>
       </div>
+
+      <ShareDialog 
+        isOpen={isShareDialogOpen}
+        onClose={() => setIsShareDialogOpen(false)}
+        flowName={flowName}
+        flowData={{ nodes, edges }}
+      />
     </div>
   );
 };
