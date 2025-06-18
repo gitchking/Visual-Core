@@ -1,11 +1,33 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { auth, profiles } from '@/lib/supabase';
+import { auth as localAuth } from '@/lib/localAuth';
+
+interface User {
+  id: string;
+  email: string;
+  username?: string;
+  full_name?: string;
+  gender?: string;
+  bio?: string;
+  website?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface Profile {
+  id: string;
+  user_id: string;
+  username?: string;
+  full_name?: string;
+  gender?: string;
+  bio?: string;
+  website?: string;
+  updated_at: string;
+}
 
 interface AuthContextType {
   user: User | null;
-  session: Session | null;
-  profile: any;
+  session: any;
+  profile: Profile | null;
   loading: boolean;
   signUp: (email: string, password: string, userData?: any) => Promise<{ data: any; error: any }>;
   signIn: (email: string, password: string) => Promise<{ data: any; error: any }>;
@@ -31,55 +53,38 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<any>(null);
+  const [session, setSession] = useState<any>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Get initial session
     const getInitialSession = async () => {
-      const { session } = await auth.getCurrentSession();
-      setSession(session);
-      setUser(session?.user ?? null);
+      const { user } = await localAuth.getCurrentUser();
+      const { session } = await localAuth.getCurrentSession();
       
-      if (session?.user) {
-        await loadProfile(session.user.id);
+      setSession(session);
+      setUser(user);
+      
+      if (user) {
+        await loadProfile(user.id);
       }
       
       setLoading(false);
     };
 
     getInitialSession();
-
-    // Listen for auth changes
-    const { data: { subscription } } = auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, session?.user?.email);
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        await loadProfile(session.user.id);
-      } else {
-        setProfile(null);
-      }
-      
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
   }, []);
 
   const loadProfile = async (userId: string) => {
     try {
-      const { data, error } = await profiles.getProfile(userId);
+      const { profile, error } = await localAuth.getUserProfile(userId);
       if (error) {
         console.error('Error loading profile:', error);
         // If profile doesn't exist, create one
-        if (error.code === 'PGRST116') {
-          await createDefaultProfile(userId);
-        }
+        await createDefaultProfile(userId);
       } else {
-        setProfile(data);
+        setProfile(profile);
       }
     } catch (error) {
       console.error('Error loading profile:', error);
@@ -88,19 +93,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const createDefaultProfile = async (userId: string) => {
     try {
-      const { data, error } = await profiles.createProfile({
-        id: userId,
+      const { profile, error } = await localAuth.updateProfile(userId, {
         username: `user_${userId.slice(0, 8)}`,
         full_name: '',
-        avatar_url: '',
         bio: '',
-        website: '',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        website: ''
       });
       
-      if (!error && data) {
-        setProfile(data);
+      if (!error && profile) {
+        setProfile(profile);
       }
     } catch (error) {
       console.error('Error creating default profile:', error);
@@ -108,32 +109,50 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const signUp = async (email: string, password: string, userData?: any) => {
-    return await auth.signUp(email, password, userData);
+    const result = await localAuth.signUp(email, password, userData);
+    if (result.data?.user) {
+      setUser(result.data.user);
+      setSession(result.data.session);
+      await loadProfile(result.data.user.id);
+    }
+    return result;
   };
 
   const signIn = async (email: string, password: string) => {
-    return await auth.signIn(email, password);
+    const result = await localAuth.signIn(email, password);
+    if (result.data?.user) {
+      setUser(result.data.user);
+      setSession(result.data.session);
+      await loadProfile(result.data.user.id);
+    }
+    return result;
   };
 
   const signInWithOAuth = async (provider: 'google' | 'github' | 'discord') => {
-    return await auth.signInWithOAuth(provider);
+    // OAuth not supported in local auth, return error
+    return { data: null, error: { message: 'OAuth not supported in local authentication mode' } };
   };
 
   const signOut = async () => {
-    return await auth.signOut();
+    const result = await localAuth.signOut();
+    setUser(null);
+    setSession(null);
+    setProfile(null);
+    return result;
   };
 
   const resetPassword = async (email: string) => {
-    return await auth.resetPassword(email);
+    // For local auth, we'll just return success (in real app, you'd send email)
+    return { data: { message: 'Password reset email sent' }, error: null };
   };
 
   const updateProfile = async (updates: any) => {
     if (!user) throw new Error('No user logged in');
-    const { data, error } = await profiles.updateProfile(user.id, updates);
-    if (!error && data) {
-      setProfile(data);
+    const { profile, error } = await localAuth.updateProfile(user.id, updates);
+    if (!error && profile) {
+      setProfile(profile);
     }
-    return { data, error };
+    return { data: profile, error };
   };
 
   const value = {

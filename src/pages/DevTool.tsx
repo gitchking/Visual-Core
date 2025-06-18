@@ -2,14 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { getDatabase, initDatabase } from '@/lib/database';
-import { Database, Users, MessageSquare, Download, Shield, User, UserCheck } from 'lucide-react';
+import { Database, Users, MessageSquare, Download, Shield, User, UserCheck, Trash2, Plus, Eye } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import OAuthTest from '@/components/auth/OAuthTest';
+import { localAuth } from '@/lib/localAuth';
 
 const DevTool = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [dbData, setDbData] = useState<any>(null);
+  const [allUsers, setAllUsers] = useState<any[]>([]);
+  const [showUsers, setShowUsers] = useState(false);
   const { user, profile, signOut } = useAuth();
 
   const handleLogin = () => {
@@ -57,6 +60,24 @@ const DevTool = () => {
     }
   };
 
+  const loadAllUsers = () => {
+    const users = localAuth.getAllUsers();
+    setAllUsers(users);
+    setShowUsers(true);
+  };
+
+  const deleteUser = (userId: string) => {
+    if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+      const success = localAuth.deleteUser(userId);
+      if (success) {
+        loadAllUsers(); // Refresh the list
+        alert('User deleted successfully');
+      } else {
+        alert('Failed to delete user');
+      }
+    }
+  };
+
   const exportDatabase = () => {
     const db = getDatabase();
     const data = db.export();
@@ -65,6 +86,17 @@ const DevTool = () => {
     const a = document.createElement('a');
     a.href = url;
     a.download = 'visualflow-database.db';
+    a.click();
+  };
+
+  const exportUsers = () => {
+    const users = localAuth.getAllUsers();
+    const dataStr = JSON.stringify(users, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'users-export.json';
     a.click();
   };
 
@@ -104,7 +136,7 @@ const DevTool = () => {
             <Database className="text-blue-600" />
             DevTool Dashboard
           </h1>
-          <div className="flex gap-4">
+          <div className="flex gap-4 flex-wrap">
             <Button onClick={loadDatabaseData} variant="outline">
               Refresh Data
             </Button>
@@ -112,14 +144,75 @@ const DevTool = () => {
               <Download size={16} className="mr-2" />
               Export Database
             </Button>
+            <Button onClick={loadAllUsers} variant="outline">
+              <Users size={16} className="mr-2" />
+              View All Users
+            </Button>
+            <Button onClick={exportUsers} variant="outline">
+              <Download size={16} className="mr-2" />
+              Export Users
+            </Button>
           </div>
         </div>
+
+        {/* User Management Section */}
+        {showUsers && (
+          <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <Users className="text-blue-600" />
+              User Management ({allUsers.length} users)
+            </h2>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse border border-gray-300">
+                <thead>
+                  <tr className="bg-gray-50">
+                    <th className="border border-gray-300 px-4 py-2 text-left">ID</th>
+                    <th className="border border-gray-300 px-4 py-2 text-left">Email</th>
+                    <th className="border border-gray-300 px-4 py-2 text-left">Username</th>
+                    <th className="border border-gray-300 px-4 py-2 text-left">Full Name</th>
+                    <th className="border border-gray-300 px-4 py-2 text-left">Created</th>
+                    <th className="border border-gray-300 px-4 py-2 text-left">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {allUsers.map((user) => (
+                    <tr key={user.id} className="hover:bg-gray-50">
+                      <td className="border border-gray-300 px-4 py-2 font-mono text-sm">{user.id}</td>
+                      <td className="border border-gray-300 px-4 py-2">{user.email}</td>
+                      <td className="border border-gray-300 px-4 py-2">{user.username || 'Not set'}</td>
+                      <td className="border border-gray-300 px-4 py-2">{user.full_name || 'Not set'}</td>
+                      <td className="border border-gray-300 px-4 py-2 text-sm">
+                        {new Date(user.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="border border-gray-300 px-4 py-2">
+                        <Button
+                          onClick={() => deleteUser(user.id)}
+                          variant="outline"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 size={14} className="mr-1" />
+                          Delete
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="mt-4">
+              <Button onClick={() => setShowUsers(false)} variant="outline">
+                Hide Users
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* User Information Section */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
             <UserCheck className="text-green-600" />
-            User Information
+            Current User Information
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-3">
