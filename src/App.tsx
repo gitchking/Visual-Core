@@ -14,6 +14,7 @@ import NotFound from "./pages/NotFound";
 import CommunityPage from "./pages/CommunityPage";
 import AuthCallback from "./pages/AuthCallback";
 import AppSidebar from "./components/AppSidebar";
+import ThemeToggle from "./components/ThemeToggle";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,7 @@ const App = () => (
                   </Routes>
                 </SidebarInset>
               </div>
+              <ThemeToggle />
             </SidebarProvider>
           </BrowserRouter>
         </TooltipProvider>
