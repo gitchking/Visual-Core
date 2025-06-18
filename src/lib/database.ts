@@ -38,6 +38,30 @@ export const initDatabase = async () => {
 
 const checkAndMigrateDatabase = async () => {
   console.log('Checking database migration...');
+  
+  // Check if users table has password column
+  try {
+    const stmt = db.prepare("PRAGMA table_info(users)");
+    const columns = [];
+    while (stmt.step()) {
+      columns.push(stmt.getAsObject());
+    }
+    stmt.free();
+    
+    console.log('Users table columns:', columns);
+    const hasPassword = columns.some((col: any) => col.name === 'password');
+    if (!hasPassword) {
+      console.log('Adding password column to users table...');
+      db.run('ALTER TABLE users ADD COLUMN password TEXT');
+      saveDatabase();
+      console.log('password column added');
+    } else {
+      console.log('password column already exists');
+    }
+  } catch (error) {
+    console.log('Error checking/migrating users table:', error);
+  }
+
   // Check if website_url column exists in threads table
   try {
     const stmt = db.prepare("PRAGMA table_info(threads)");
@@ -58,15 +82,15 @@ const checkAndMigrateDatabase = async () => {
       console.log('website_url column already exists');
     }
   } catch (error) {
-    console.log('Error checking/migrating database:', error);
+    console.log('Error checking/migrating threads table:', error);
   }
 
   // Add default user if not exists
   try {
     console.log('Checking for default user...');
     db.run(`
-      INSERT INTO users (id, username, email) 
-      VALUES (1, 'default_user', 'default@example.com')
+      INSERT INTO users (id, username, email, password) 
+      VALUES (1, 'default_user', 'default@example.com', 'password123')
     `);
     saveDatabase();
     console.log('Default user added');
@@ -78,17 +102,23 @@ const checkAndMigrateDatabase = async () => {
 };
 
 const initializeTables = async () => {
-  // Users table
+  // Users table with authentication fields
   db.run(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT UNIQUE NOT NULL,
       email TEXT UNIQUE NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      password TEXT NOT NULL,
+      full_name TEXT,
+      gender TEXT,
+      bio TEXT,
+      website TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
-  // Profiles table
+  // Profiles table (for additional profile data)
   db.run(`
     CREATE TABLE IF NOT EXISTS profiles (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -108,8 +138,8 @@ const initializeTables = async () => {
   // Add default user if not exists
   try {
     db.run(`
-      INSERT INTO users (id, username, email) 
-      VALUES (1, 'default_user', 'default@example.com')
+      INSERT INTO users (id, username, email, password, full_name, gender) 
+      VALUES (1, 'default_user', 'default@example.com', 'password123', 'Default User', 'prefer-not-to-say')
     `);
     
     // Add default profile

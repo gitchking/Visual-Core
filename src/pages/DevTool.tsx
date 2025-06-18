@@ -13,6 +13,7 @@ const DevTool = () => {
   const [dbData, setDbData] = useState<any>(null);
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [showUsers, setShowUsers] = useState(false);
+  const [loading, setLoading] = useState(false);
   const { user, profile, signOut } = useAuth();
 
   const handleLogin = () => {
@@ -60,20 +61,33 @@ const DevTool = () => {
     }
   };
 
-  const loadAllUsers = () => {
-    const users = localAuth.getAllUsers();
-    setAllUsers(users);
-    setShowUsers(true);
+  const loadAllUsers = async () => {
+    try {
+      setLoading(true);
+      const users = await localAuth.getAllUsers();
+      setAllUsers(users);
+      setShowUsers(true);
+    } catch (error) {
+      console.error('Failed to load users:', error);
+      alert('Failed to load users');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const deleteUser = (userId: string) => {
+  const deleteUser = async (userId: number) => {
     if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-      const success = localAuth.deleteUser(userId);
-      if (success) {
-        loadAllUsers(); // Refresh the list
-        alert('User deleted successfully');
-      } else {
-        alert('Failed to delete user');
+      try {
+        const success = await localAuth.deleteUser(userId);
+        if (success) {
+          await loadAllUsers(); // Refresh the list
+          alert('User deleted successfully');
+        } else {
+          alert('Failed to delete user');
+        }
+      } catch (error) {
+        console.error('Error deleting user:', error);
+        alert('Error deleting user');
       }
     }
   };
@@ -90,8 +104,7 @@ const DevTool = () => {
   };
 
   const exportUsers = () => {
-    const users = localAuth.getAllUsers();
-    const dataStr = JSON.stringify(users, null, 2);
+    const dataStr = JSON.stringify(allUsers, null, 2);
     const blob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -144,11 +157,11 @@ const DevTool = () => {
               <Download size={16} className="mr-2" />
               Export Database
             </Button>
-            <Button onClick={loadAllUsers} variant="outline">
+            <Button onClick={loadAllUsers} variant="outline" disabled={loading}>
               <Users size={16} className="mr-2" />
-              View All Users
+              {loading ? 'Loading...' : 'View All Users'}
             </Button>
-            <Button onClick={exportUsers} variant="outline">
+            <Button onClick={exportUsers} variant="outline" disabled={allUsers.length === 0}>
               <Download size={16} className="mr-2" />
               Export Users
             </Button>
@@ -170,6 +183,7 @@ const DevTool = () => {
                     <th className="border border-gray-300 px-4 py-2 text-left">Email</th>
                     <th className="border border-gray-300 px-4 py-2 text-left">Username</th>
                     <th className="border border-gray-300 px-4 py-2 text-left">Full Name</th>
+                    <th className="border border-gray-300 px-4 py-2 text-left">Gender</th>
                     <th className="border border-gray-300 px-4 py-2 text-left">Created</th>
                     <th className="border border-gray-300 px-4 py-2 text-left">Actions</th>
                   </tr>
@@ -181,6 +195,7 @@ const DevTool = () => {
                       <td className="border border-gray-300 px-4 py-2">{user.email}</td>
                       <td className="border border-gray-300 px-4 py-2">{user.username || 'Not set'}</td>
                       <td className="border border-gray-300 px-4 py-2">{user.full_name || 'Not set'}</td>
+                      <td className="border border-gray-300 px-4 py-2">{user.gender || 'Not set'}</td>
                       <td className="border border-gray-300 px-4 py-2 text-sm">
                         {new Date(user.created_at).toLocaleDateString()}
                       </td>
