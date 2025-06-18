@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   ReactFlow,
@@ -165,18 +164,18 @@ const FlowEditor = () => {
   return (
     <div className="h-screen flex flex-col">
       {/* Header */}
-      <div className="bg-white border-b p-4 flex items-center justify-between">
+      <div className="bg-background border-b p-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Input
             value={flowName}
             onChange={(e) => setFlowName(e.target.value)}
             className="w-64"
           />
-          <Button onClick={addNewTodo} variant="outline" size="sm">
+          <Button onClick={addNewTodo} variant="outline" size="sm" className="bg-pink-accent hover:bg-pink-accent/90 text-white border-pink-accent">
             <Plus size={16} className="mr-2" />
             Add Todo
           </Button>
-          <Button onClick={refreshTodos} variant="outline" size="sm">
+          <Button onClick={refreshTodos} variant="outline" size="sm" className="bg-blue-accent hover:bg-blue-accent/90 text-white border-blue-accent">
             <RefreshCw size={16} className="mr-2" />
             Refresh
           </Button>
@@ -190,7 +189,7 @@ const FlowEditor = () => {
             <Share size={16} />
             Share
           </Button>
-          <Button onClick={saveFlow} className="flex items-center gap-2">
+          <Button onClick={saveFlow} className="flex items-center gap-2 bg-yellow-accent hover:bg-yellow-accent/90 text-black">
             <Save size={16} />
             Save Flow
           </Button>
