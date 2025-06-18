@@ -166,41 +166,43 @@ const FlowEditor = () => {
   return (
     <div className="h-screen flex flex-col bg-white">
       {/* Header */}
-      <div className="bg-white border-b-2 border-black p-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <div className="bg-white border-b-2 border-black p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
           <Input
             value={flowName}
             onChange={(e) => setFlowName(e.target.value)}
-            className="w-64 neo-brutal"
+            className="w-full sm:w-64 neo-brutal text-sm sm:text-base"
           />
-          <Button 
-            onClick={addNewTodo} 
-            className="neo-brutal-pink bg-pink-accent hover:bg-pink-accent text-white font-bold"
-          >
-            <Plus size={16} className="mr-2" />
-            Add Todo
-          </Button>
-          <Button 
-            onClick={refreshTodos} 
-            className="neo-brutal-blue bg-blue-accent hover:bg-blue-accent text-white font-bold"
-          >
-            <RefreshCw size={16} className="mr-2" />
-            Refresh
-          </Button>
+          <div className="flex flex-wrap gap-2 sm:gap-3">
+            <Button 
+              onClick={addNewTodo} 
+              className="neo-brutal-pink bg-pink-accent hover:bg-pink-accent text-white font-bold text-xs sm:text-sm px-3 sm:px-4 py-2"
+            >
+              <Plus size={14} className="mr-1 sm:mr-2" />
+              Add Todo
+            </Button>
+            <Button 
+              onClick={refreshTodos} 
+              className="neo-brutal-blue bg-blue-accent hover:bg-blue-accent text-white font-bold text-xs sm:text-sm px-3 sm:px-4 py-2"
+            >
+              <RefreshCw size={14} className="mr-1 sm:mr-2" />
+              Refresh
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <Button 
             onClick={() => setIsShareDialogOpen(true)} 
-            className="neo-brutal bg-white hover:bg-gray-100 text-black font-bold"
+            className="neo-brutal bg-white hover:bg-gray-100 text-black font-bold text-xs sm:text-sm px-3 sm:px-4 py-2 flex-1 sm:flex-none"
           >
-            <Share size={16} className="mr-2" />
+            <Share size={14} className="mr-1 sm:mr-2" />
             Share
           </Button>
           <Button 
             onClick={saveFlow} 
-            className="neo-brutal bg-black hover:bg-gray-800 text-white font-bold"
+            className="neo-brutal-purple bg-purple-accent hover:bg-purple-accent text-white font-bold text-xs sm:text-sm px-3 sm:px-4 py-2 flex-1 sm:flex-none"
           >
-            <Save size={16} className="mr-2" />
+            <Save size={14} className="mr-1 sm:mr-2" />
             Save Flow
           </Button>
         </div>
