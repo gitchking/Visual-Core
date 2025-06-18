@@ -12,11 +12,11 @@ const buttonVariants = cva(
       variant: {
         default: "bg-purple-accent text-white border-black shadow-[4px_4px_0px_0px_black] hover:shadow-[6px_6px_0px_0px_black] hover:translate-x-[-2px] hover:translate-y-[-2px] active:shadow-[2px_2px_0px_0px_black] active:translate-x-[1px] active:translate-y-[1px] transition-all",
         destructive:
-          "bg-destructive text-destructive-foreground border-destructive shadow-[4px_4px_0px_0px_black] hover:shadow-[6px_6px_0px_0px_black] hover:translate-x-[-2px] hover:translate-y-[-2px] active:shadow-[2px_2px_0px_0px_black] active:translate-x-[1px] active:translate-y-[1px] transition-all",
+          "bg-destructive text-destructive-foreground border-black shadow-[4px_4px_0px_0px_black] hover:shadow-[6px_6px_0px_0px_black] hover:translate-x-[-2px] hover:translate-y-[-2px] active:shadow-[2px_2px_0px_0px_black] active:translate-x-[1px] active:translate-y-[1px] transition-all",
         outline:
           "border-black bg-background hover:bg-purple-accent hover:text-white shadow-[4px_4px_0px_0px_black] hover:shadow-[6px_6px_0px_0px_black] hover:translate-x-[-2px] hover:translate-y-[-2px] active:shadow-[2px_2px_0px_0px_black] active:translate-x-[1px] active:translate-y-[1px] transition-all",
         secondary:
-          "bg-blue-accent text-white border-black shadow-[4px_4px_0px_0px_black] hover:shadow-[6px_6px_0px_0px_black] hover:translate-x-[-2px] hover:translate-y-[-2px] active:shadow-[2px_2px_0px_0px_black] active:translate-x-[1px] active:translate-y-[1px] transition-all",
+          "bg-purple-accent text-white border-black shadow-[4px_4px_0px_0px_black] hover:shadow-[6px_6px_0px_0px_black] hover:translate-x-[-2px] hover:translate-y-[-2px] active:shadow-[2px_2px_0px_0px_black] active:translate-x-[1px] active:translate-y-[1px] transition-all",
         ghost: "border-transparent hover:bg-purple-accent hover:text-white",
         link: "text-purple-accent underline-offset-4 hover:underline border-transparent",
       },
