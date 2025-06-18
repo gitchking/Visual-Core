@@ -19,74 +19,67 @@ const Index = () => {
       description: "Create and manage tasks, then visualize them as interactive flowcharts",
       icon: CheckSquare,
       href: "/todos",
-      accent: "pink"
+      accent: "purple"
     },
     {
       title: "Flow Editor",
       description: "Transform your workflow into beautiful node-based diagrams",
       icon: Workflow,
       href: "/flow-editor",
-      accent: "blue"
+      accent: "purple"
     },
     {
       title: "Charts",
       description: "Visualize your productivity data with interactive charts",
       icon: BarChart3,
       href: "/analytics",
-      accent: "default"
+      accent: "purple"
     },
     {
       title: "Community",
       description: "Connect with others and share your workflows",
       icon: Users,
       href: "/community",
-      accent: "pink"
+      accent: "purple"
     },
     {
       title: "Studio",
       description: "Create and publish content for your workspace",
       icon: Megaphone,
       href: "/studio",
-      accent: "blue"
+      accent: "purple"
     }
   ];
 
   const getAccentClasses = (accent: string) => {
-    switch (accent) {
-      case 'pink':
-        return 'bg-pink-accent hover:bg-pink-accent/90 text-white neo-brutal-pink';
-      case 'blue':
-        return 'bg-blue-accent hover:bg-blue-accent/90 text-white neo-brutal-blue';
-      default:
-        return 'bg-foreground hover:bg-foreground/90 text-background neo-brutal';
-    }
+    return 'bg-purple-accent hover:bg-purple-accent/90 text-white neo-brutal-purple';
   };
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-6 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
         {/* Header */}
-        <div className="text-center mb-16">
-          <h1 className="text-6xl font-bold mb-6">
+        <div className="text-center mb-12 sm:mb-16">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6">
             Apps
           </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto px-4">
             Build amazing applications with visual workflows and productivity tools.
           </p>
         </div>
 
         {/* Feature Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mb-12 sm:mb-16 px-4 sm:px-0">
           {features.map((feature) => (
             <Card key={feature.title} className="neo-card hover-lift border-2 hover:border-foreground transition-all duration-300">
               <CardHeader>
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 bg-muted border-2 border-black neo-card flex items-center justify-center">
-                    <feature.icon className="w-6 h-6" />
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-muted border-2 border-black neo-card flex items-center justify-center">
+                    <feature.icon className="w-5 h-5 sm:w-6 sm:h-6" />
                   </div>
-                  <CardTitle className="text-xl">{feature.title}</CardTitle>
+                  <CardTitle className="text-lg sm:text-xl">{feature.title}</CardTitle>
                 </div>
-                <CardDescription className="text-base">
+                <CardDescription className="text-sm sm:text-base">
                   {feature.description}
                 </CardDescription>
               </CardHeader>
@@ -106,23 +99,23 @@ const Index = () => {
         </div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 px-4 sm:px-0">
           <Card className="text-center neo-card">
-            <CardHeader>
-              <CardTitle className="text-3xl font-bold">0</CardTitle>
-              <CardDescription>Active Tasks</CardDescription>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-2xl sm:text-3xl font-bold">0</CardTitle>
+              <CardDescription className="text-sm sm:text-base">Active Tasks</CardDescription>
             </CardHeader>
           </Card>
           <Card className="text-center neo-card">
-            <CardHeader>
-              <CardTitle className="text-3xl font-bold">0</CardTitle>
-              <CardDescription>Completed Flows</CardDescription>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-2xl sm:text-3xl font-bold">0</CardTitle>
+              <CardDescription className="text-sm sm:text-base">Completed Flows</CardDescription>
             </CardHeader>
           </Card>
           <Card className="text-center neo-card">
-            <CardHeader>
-              <CardTitle className="text-3xl font-bold">0</CardTitle>
-              <CardDescription>Community Posts</CardDescription>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-2xl sm:text-3xl font-bold">0</CardTitle>
+              <CardDescription className="text-sm sm:text-base">Community Posts</CardDescription>
             </CardHeader>
           </Card>
         </div>
