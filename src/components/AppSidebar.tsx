@@ -60,19 +60,19 @@ const AppSidebar = () => {
   const location = useLocation();
 
   return (
-    <Sidebar>
-      <SidebarHeader>
+    <Sidebar className="bg-white border-r border-black">
+      <SidebarHeader className="bg-white">
         <div className="flex items-center space-x-2 px-4 py-2">
-          <div className="w-8 h-8 bg-foreground rounded-lg flex items-center justify-center">
-            <Workflow className="w-5 h-5 text-background" />
+          <div className="w-8 h-8 bg-purple-accent rounded-lg flex items-center justify-center">
+            <Workflow className="w-5 h-5 text-white" />
           </div>
-          <span className="text-xl font-bold">VisualFlow</span>
+          <span className="text-xl font-bold text-black">VisualFlow</span>
         </div>
       </SidebarHeader>
       
-      <SidebarContent>
+      <SidebarContent className="bg-white">
         <SidebarGroup>
-          <SidebarGroupLabel>Workspace</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-black">Workspace</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navigationItems.map((item) => (
@@ -80,6 +80,9 @@ const AppSidebar = () => {
                   <SidebarMenuButton 
                     asChild 
                     isActive={location.pathname === item.url}
+                    className={`text-black hover:bg-purple-accent hover:text-white ${
+                      location.pathname === item.url ? 'bg-purple-accent text-white' : ''
+                    }`}
                   >
                     <Link to={item.url}>
                       <item.icon className="w-5 h-5" />
@@ -93,13 +96,16 @@ const AppSidebar = () => {
         </SidebarGroup>
         
         <SidebarGroup>
-          <SidebarGroupLabel>Administration</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-black">Administration</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton 
                   asChild 
                   isActive={location.pathname === '/dev'}
+                  className={`text-black hover:bg-purple-accent hover:text-white ${
+                    location.pathname === '/dev' ? 'bg-purple-accent text-white' : ''
+                  }`}
                 >
                   <Link to="/dev">
                     <Settings className="w-5 h-5" />
@@ -112,8 +118,8 @@ const AppSidebar = () => {
         </SidebarGroup>
       </SidebarContent>
       
-      <SidebarFooter>
-        <div className="px-4 py-2 text-xs text-muted-foreground">
+      <SidebarFooter className="bg-white border-t border-black">
+        <div className="px-4 py-2 text-xs text-gray-600">
           © 2024 VisualFlow WebApp
         </div>
       </SidebarFooter>
