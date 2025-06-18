@@ -27,13 +27,13 @@ const HeroSection = () => {
             <span className="text-sm font-medium text-purple-600">Premium Productivity Platform</span>
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-black mb-6 leading-tight">
+          <h1 className="text-4xl md:text-5xl font-black mb-6 leading-tight">
             Transform Your
             <span className="block text-gradient-purple">Workflow</span>
             Into Visual Magic
           </h1>
 
-          <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed">
             Turn simple to-dos into stunning visual flowcharts. Visualize your data with beautiful charts. 
             Collaborate in rich community discussions. All in one premium platform.
           </p>
