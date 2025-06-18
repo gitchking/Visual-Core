@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { userService } from '@/lib/database';
+import { userService, initDatabase } from '@/lib/database';
 
 interface User {
   id: string;
@@ -61,6 +61,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Get initial session from localStorage (for persistence across page reloads)
     const getInitialSession = async () => {
       try {
+        await initDatabase();
         const currentUserId = localStorage.getItem('currentUserId');
         if (currentUserId) {
           const { user } = userService.getUserById(currentUserId);
@@ -82,6 +83,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const loadProfile = async (userId: string) => {
     try {
+      await initDatabase();
       const { profile, error } = userService.getUserProfile(userId);
       if (error) {
         console.error('Error loading profile:', error);
@@ -97,6 +99,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const createDefaultProfile = async (userId: string) => {
     try {
+      await initDatabase();
       const { success, error } = userService.updateProfile(userId, {
         username: `user_${userId.slice(0, 8)}`,
         full_name: '',
@@ -115,6 +118,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signUp = async (email: string, password: string, userData?: any) => {
     try {
+      await initDatabase();
       // Check if user already exists
       const exists = userService.userExists(email);
       if (exists) {
@@ -163,6 +167,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signIn = async (email: string, password: string) => {
     try {
+      await initDatabase();
       const { user, error } = userService.authenticateUser(email, password);
       if (user) {
         setUser(user);
@@ -209,6 +214,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const updateProfile = async (updates: any) => {
     if (!user) throw new Error('No user logged in');
     try {
+      await initDatabase();
       const { success, error } = userService.updateProfile(user.id, updates);
       if (success) {
         const { profile } = userService.getUserProfile(user.id);
