@@ -67,9 +67,10 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// Only two vibrant accent colors
+				// Only three vibrant accent colors - NO YELLOW
 				'pink-accent': 'rgb(var(--pink-accent))',
 				'blue-accent': 'rgb(var(--blue-accent))',
+				'purple-accent': 'rgb(var(--purple-accent))',
 			},
 			borderRadius: {
 				lg: '0px',

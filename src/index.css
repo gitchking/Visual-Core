@@ -46,7 +46,7 @@
     --sidebar-border: 0 0 0;
     --sidebar-ring: 0 0 0;
 
-    /* Only two vibrant accent colors */
+    /* Only three vibrant accent colors - NO YELLOW */
     --pink-accent: 255 78 205;
     --blue-accent: 63 140 255;
     --purple-accent: 147 51 234;
@@ -221,7 +221,49 @@
     box-shadow: 4px 4px 0px 0px #000000;
   }
 
-  /* Remove all gradients and replace with white background */
+  /* REMOVE ALL YELLOW COLORS - Replace with white or purple */
+  .bg-yellow-50,
+  .bg-yellow-100,
+  .bg-yellow-200,
+  .bg-yellow-300,
+  .bg-yellow-400,
+  .bg-yellow-500,
+  .bg-yellow-600,
+  .bg-yellow-700,
+  .bg-yellow-800,
+  .bg-yellow-900 {
+    background: white !important;
+  }
+
+  /* Override yellow text with proper contrasting colors */
+  .text-yellow-50,
+  .text-yellow-100,
+  .text-yellow-200,
+  .text-yellow-300,
+  .text-yellow-400,
+  .text-yellow-500,
+  .text-yellow-600,
+  .text-yellow-700,
+  .text-yellow-800,
+  .text-yellow-900 {
+    color: rgb(var(--purple-accent)) !important;
+  }
+
+  /* Override yellow borders with purple */
+  .border-yellow-50,
+  .border-yellow-100,
+  .border-yellow-200,
+  .border-yellow-300,
+  .border-yellow-400,
+  .border-yellow-500,
+  .border-yellow-600,
+  .border-yellow-700,
+  .border-yellow-800,
+  .border-yellow-900 {
+    border-color: rgb(var(--purple-accent)) !important;
+  }
+
+  /* Remove all gradients and replace with solid colors */
   .bg-gradient-to-r,
   .bg-gradient-to-l,
   .bg-gradient-to-t,
@@ -233,32 +275,11 @@
     background: white !important;
   }
 
-  /* Override any yellow backgrounds with white or purple */
-  .bg-yellow-50,
-  .bg-yellow-100,
-  .bg-yellow-200,
-  .bg-yellow-300,
-  .bg-yellow-400,
-  .bg-yellow-500 {
-    background: white !important;
+  /* Fix text visibility */
+  .text-gray-400 {
+    color: rgb(100 116 139) !important;
   }
 
-  /* Override yellow text with proper contrasting colors */
-  .text-yellow-600,
-  .text-yellow-700,
-  .text-yellow-800 {
-    color: rgb(var(--purple-accent)) !important;
-  }
-
-  /* Override yellow borders with purple */
-  .border-yellow-500,
-  .border-yellow-400,
-  .border-yellow-300 {
-    border-color: rgb(var(--purple-accent)) !important;
-  }
-
-  /* Ensure proper text visibility */
-  .text-gray-400,
   .text-gray-500 {
     color: rgb(100 116 139) !important;
   }
@@ -269,6 +290,44 @@
 
   .text-gray-700 {
     color: rgb(51 65 85) !important;
+  }
+
+  .text-gray-800 {
+    color: rgb(30 41 59) !important;
+  }
+
+  .text-gray-900 {
+    color: rgb(15 23 42) !important;
+  }
+
+  /* Ensure good contrast for muted text */
+  .text-muted-foreground {
+    color: rgb(100 116 139) !important;
+  }
+
+  /* Force white backgrounds everywhere */
+  .bg-background {
+    background: white !important;
+  }
+
+  .bg-card {
+    background: white !important;
+  }
+
+  .bg-popover {
+    background: white !important;
+  }
+
+  .bg-secondary {
+    background: rgb(248 250 252) !important;
+  }
+
+  .bg-muted {
+    background: rgb(248 250 252) !important;
+  }
+
+  .bg-accent {
+    background: rgb(248 250 252) !important;
   }
 }
 
