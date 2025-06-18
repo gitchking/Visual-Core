@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   ReactFlow,
   MiniMap,
@@ -16,38 +16,98 @@ import {
 import '@xyflow/react/dist/style.css';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Save, Plus } from 'lucide-react';
+import { Save, Plus, RefreshCw } from 'lucide-react';
 import { flowService } from '@/services/flowService';
+import { todoService } from '@/services/todoService';
+import { initDatabase } from '@/lib/database';
+import { useStore } from '@/stores/useStore';
+import TodoNode from '@/components/flow/TodoNode';
 
-const initialNodes: Node[] = [
-  {
-    id: '1',
-    type: 'input',
-    data: { label: 'Start Task' },
-    position: { x: 250, y: 25 },
-  },
-];
-
-const initialEdges: Edge[] = [];
+const nodeTypes = {
+  todo: TodoNode,
+};
 
 const FlowEditor = () => {
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-  const [flowName, setFlowName] = useState('New Flow');
+  const { todos, setTodos } = useStore();
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [flowName, setFlowName] = useState('Todo Flow');
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Convert todos to flow nodes
+  const todosToNodes = (todoList: any[]): Node[] => {
+    return todoList.map((todo, index) => ({
+      id: `todo-${todo.id}`,
+      type: 'todo',
+      position: { x: 250 + (index % 3) * 300, y: 100 + Math.floor(index / 3) * 150 },
+      data: {
+        todo,
+        onUpdate: handleTodoUpdate,
+        onDelete: handleTodoDelete,
+      },
+    }));
+  };
+
+  // Load todos and convert to nodes
+  const loadTodos = async () => {
+    try {
+      await initDatabase();
+      const todoData = await todoService.getAllTodos();
+      setTodos(todoData as any);
+      const todoNodes = todosToNodes(todoData as any);
+      setNodes(todoNodes);
+    } catch (error) {
+      console.error('Failed to load todos:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadTodos();
+  }, []);
+
+  // Update todo and refresh nodes
+  const handleTodoUpdate = async (todoId: number, updates: any) => {
+    try {
+      await todoService.updateTodo(todoId, updates);
+      await loadTodos(); // Reload to sync changes
+    } catch (error) {
+      console.error('Failed to update todo:', error);
+    }
+  };
+
+  // Delete todo and refresh nodes
+  const handleTodoDelete = async (todoId: number) => {
+    try {
+      await todoService.deleteTodo(todoId);
+      await loadTodos(); // Reload to sync changes
+    } catch (error) {
+      console.error('Failed to delete todo:', error);
+    }
+  };
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
     [setEdges],
   );
 
-  const addNewNode = () => {
-    const newNode: Node = {
-      id: `${nodes.length + 1}`,
-      type: 'default',
-      data: { label: `Task ${nodes.length + 1}` },
-      position: { x: Math.random() * 400, y: Math.random() * 400 },
-    };
-    setNodes((nds) => nds.concat(newNode));
+  const addNewTodo = async () => {
+    try {
+      const newTodo = {
+        title: `New Task ${todos.length + 1}`,
+        description: 'Click to edit this task',
+        priority: 'medium'
+      };
+      await todoService.createTodo(newTodo);
+      await loadTodos(); // Reload to show new todo
+    } catch (error) {
+      console.error('Failed to create todo:', error);
+    }
+  };
+
+  const refreshTodos = () => {
+    loadTodos();
   };
 
   const saveFlow = async () => {
@@ -62,6 +122,14 @@ const FlowEditor = () => {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-lg">Loading todos...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen flex flex-col">
       {/* Header */}
@@ -72,9 +140,13 @@ const FlowEditor = () => {
             onChange={(e) => setFlowName(e.target.value)}
             className="w-64"
           />
-          <Button onClick={addNewNode} variant="outline" size="sm">
+          <Button onClick={addNewTodo} variant="outline" size="sm">
             <Plus size={16} className="mr-2" />
-            Add Node
+            Add Todo
+          </Button>
+          <Button onClick={refreshTodos} variant="outline" size="sm">
+            <RefreshCw size={16} className="mr-2" />
+            Refresh
           </Button>
         </div>
         <Button onClick={saveFlow} className="flex items-center gap-2">
@@ -91,6 +163,7 @@ const FlowEditor = () => {
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
+          nodeTypes={nodeTypes}
           fitView
           attributionPosition="top-right"
         >
