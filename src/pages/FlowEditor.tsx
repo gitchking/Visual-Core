@@ -1,5 +1,4 @@
-
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   ReactFlow,
   MiniMap,
@@ -13,11 +12,14 @@ import {
   Node,
   BackgroundVariant,
   ConnectionMode,
+  BaseEdge,
+  EdgeProps,
+  getBezierPath,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Save, Plus, RefreshCw, Share } from 'lucide-react';
+import { Save, Plus, RefreshCw, Share, Undo2, Redo2 } from 'lucide-react';
 import { flowService } from '@/services/flowService';
 import { todoService } from '@/services/todoService';
 import { initDatabase } from '@/lib/database';
@@ -25,9 +27,68 @@ import { useStore } from '@/stores/useStore';
 import TodoNode from '@/components/flow/TodoNode';
 import ShareDialog from '@/components/flow/ShareDialog';
 
+// Custom edge component for a curvy black line
+const CurvyBlackEdge: React.FC<EdgeProps> = ({
+  id,
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
+  sourcePosition,
+  targetPosition,
+  style = {},
+  markerEnd,
+}) => {
+  const [edgePath, labelX, labelY] = getBezierPath({
+    sourceX,
+    sourceY,
+    sourcePosition,
+    targetX,
+    targetY,
+    targetPosition,
+  });
+
+  return (
+    <>
+      <BaseEdge
+        path={edgePath}
+        markerEnd={markerEnd}
+        style={{
+          ...style,
+          stroke: '#000',
+          strokeWidth: 3,
+          strokeDasharray: 'none',
+        }}
+      />
+    </>
+  );
+};
+
 const nodeTypes = {
   todo: TodoNode,
 };
+
+const edgeTypes = {
+  curvy: CurvyBlackEdge,
+};
+
+// History management for undo/redo
+interface HistoryNode {
+  id: string;
+  type: string;
+  data: Record<string, unknown>;
+}
+
+interface ConnectionAction {
+  type: 'add' | 'remove';
+  edge: Edge;
+}
+
+interface HistoryState {
+  nodes: HistoryNode[];
+  edges: Edge[];
+  lastConnectionAction?: ConnectionAction;
+}
 
 const FlowEditor = () => {
   const { todos, setTodos } = useStore();
@@ -36,20 +97,191 @@ const FlowEditor = () => {
   const [flowName, setFlowName] = useState('Todo Flow');
   const [isLoading, setIsLoading] = useState(true);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  
+  // Undo/Redo functionality
+  const [history, setHistory] = useState<HistoryState[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const isUndoRedoAction = useRef(false);
 
-  // Convert todos to flow nodes
-  const todosToNodes = (todoList: any[]): Node[] => {
-    return todoList.map((todo, index) => ({
-      id: `todo-${todo.id}`,
-      type: 'todo',
-      position: { x: 250 + (index % 3) * 300, y: 100 + Math.floor(index / 3) * 150 },
-      data: {
-        todo,
-        onUpdate: handleTodoUpdate,
-        onDelete: handleTodoDelete,
-      },
+  // Save current state to history - only content, not positions
+  const saveToHistory = useCallback((newNodes: Node[], newEdges: Edge[], connectionAction?: ConnectionAction) => {
+    if (isUndoRedoAction.current) {
+      isUndoRedoAction.current = false;
+      return;
+    }
+
+    // Create history state with only content data (no positions)
+    const contentOnlyNodes = newNodes.map(node => ({
+      id: node.id,
+      type: node.type,
+      data: node.data,
+      // Exclude position from history
     }));
-  };
+
+    const newState = { 
+      nodes: contentOnlyNodes, 
+      edges: newEdges,
+      lastConnectionAction: connectionAction
+    };
+    
+    console.log('Saving to history:', newState, 'current index:', historyIndex);
+    
+    setHistory(prev => {
+      // Remove any future history if we're not at the end
+      const newHistory = prev.slice(0, historyIndex + 1);
+      newHistory.push(newState);
+      // Keep unlimited history - remove the 50 state limit
+      console.log('New history length:', newHistory.length);
+      return newHistory;
+    });
+    setHistoryIndex(prev => {
+      const newIndex = prev + 1;
+      console.log('New history index:', newIndex);
+      return newIndex;
+    });
+  }, [historyIndex]);
+
+  // Undo function - handles individual connection actions
+  const undo = useCallback(() => {
+    console.log('Undo function called, historyIndex:', historyIndex, 'history length:', history.length);
+    
+    if (historyIndex > 0) {
+      isUndoRedoAction.current = true;
+      const newIndex = historyIndex - 1;
+      const currentState = history[historyIndex];
+      const previousState = history[newIndex];
+      
+      console.log('Current state:', currentState);
+      console.log('Previous state:', previousState);
+      
+      if (currentState.lastConnectionAction?.type === 'add') {
+        // Undo connection addition - remove the specific edge
+        const edgeToRemove = currentState.lastConnectionAction.edge;
+        console.log('Undoing connection addition:', edgeToRemove);
+        setEdges(eds => eds.filter(edge => edge.id !== edgeToRemove.id));
+      } else if (currentState.lastConnectionAction?.type === 'remove') {
+        // Undo connection removal - add back the specific edge
+        const edgeToRestore = currentState.lastConnectionAction.edge;
+        console.log('Undoing connection removal:', edgeToRestore);
+        setEdges(eds => [...eds, edgeToRestore]);
+      } else {
+        // Regular content undo
+        console.log('Undoing content changes');
+        const restoredNodes = previousState.nodes.map(historyNode => {
+          const currentNode = nodes.find(n => n.id === historyNode.id);
+          return {
+            ...historyNode,
+            position: currentNode?.position || { x: 0, y: 0 },
+            sourcePosition: currentNode?.sourcePosition,
+            targetPosition: currentNode?.targetPosition,
+          } as Node;
+        });
+        
+        setNodes(restoredNodes);
+        setEdges(previousState.edges);
+      }
+      
+      setHistoryIndex(newIndex);
+      console.log('History index updated to:', newIndex);
+    } else {
+      console.log('Cannot undo - history index is 0 or less');
+    }
+  }, [historyIndex, history, setNodes, setEdges, nodes]);
+
+  // Redo function - handles individual connection actions
+  const redo = useCallback(() => {
+    console.log('Redo function called, historyIndex:', historyIndex, 'history length:', history.length);
+    
+    if (historyIndex < history.length - 1) {
+      isUndoRedoAction.current = true;
+      const newIndex = historyIndex + 1;
+      const nextState = history[newIndex];
+      
+      console.log('Next state:', nextState);
+      
+      if (nextState.lastConnectionAction?.type === 'add') {
+        // Redo connection addition - add the specific edge
+        const edgeToAdd = nextState.lastConnectionAction.edge;
+        console.log('Redoing connection addition:', edgeToAdd);
+        setEdges(eds => [...eds, edgeToAdd]);
+      } else if (nextState.lastConnectionAction?.type === 'remove') {
+        // Redo connection removal - remove the specific edge
+        const edgeToRemove = nextState.lastConnectionAction.edge;
+        console.log('Redoing connection removal:', edgeToRemove);
+        setEdges(eds => eds.filter(edge => edge.id !== edgeToRemove.id));
+      } else {
+        // Regular content redo
+        console.log('Redoing content changes');
+        const restoredNodes = nextState.nodes.map(historyNode => {
+          const currentNode = nodes.find(n => n.id === historyNode.id);
+          return {
+            ...historyNode,
+            position: currentNode?.position || { x: 0, y: 0 },
+            sourcePosition: currentNode?.sourcePosition,
+            targetPosition: currentNode?.targetPosition,
+          } as Node;
+        });
+        
+        setNodes(restoredNodes);
+        setEdges(nextState.edges);
+      }
+      
+      setHistoryIndex(newIndex);
+      console.log('History index updated to:', newIndex);
+    } else {
+      console.log('Cannot redo - already at latest state');
+    }
+  }, [historyIndex, history, setNodes, setEdges, nodes]);
+
+  // Enhanced node change handler with history - only for content changes
+  const handleNodesChange = useCallback((changes: any) => {
+    onNodesChange(changes);
+    
+    // Only save to history for content changes, not position changes
+    const hasContentChanges = changes.some((change: any) => 
+      change.type === 'replace' || 
+      (change.type === 'select' && change.selected !== undefined)
+    );
+    
+    if (hasContentChanges) {
+      setTimeout(() => {
+        if (!isUndoRedoAction.current) {
+          saveToHistory(nodes, edges);
+        }
+      }, 100);
+    }
+  }, [onNodesChange, nodes, edges, saveToHistory]);
+
+  // Enhanced edge change handler with history
+  const handleEdgesChange = useCallback((changes: any) => {
+    onEdgesChange(changes);
+    
+    // Track individual connection removals
+    const removalChanges = changes.filter((change: any) => change.type === 'remove');
+    
+    if (removalChanges.length > 0) {
+      // Save each removal as individual action
+      removalChanges.forEach((change: any) => {
+        const connectionAction: ConnectionAction = {
+          type: 'remove',
+          edge: change.item
+        };
+        
+        setTimeout(() => {
+          if (!isUndoRedoAction.current) {
+            saveToHistory(nodes, edges, connectionAction);
+          }
+        }, 100);
+      });
+    } else {
+      // Regular edge changes (not removals)
+      setTimeout(() => {
+        if (!isUndoRedoAction.current) {
+          saveToHistory(nodes, edges);
+        }
+      }, 100);
+    }
+  }, [onEdgesChange, nodes, edges, saveToHistory]);
 
   // Load todos and convert to nodes
   const loadTodos = async () => {
@@ -59,11 +291,48 @@ const FlowEditor = () => {
       setTodos(todoData as any);
       const todoNodes = todosToNodes(todoData as any);
       setNodes(todoNodes);
+      
+      // Initialize history with current state
+      const initialHistoryState: HistoryState = {
+        nodes: todoNodes.map(node => ({
+          id: node.id,
+          type: node.type,
+          data: node.data,
+        })),
+        edges: []
+      };
+      
+      setHistory([initialHistoryState]);
+      setHistoryIndex(0);
+      console.log('History initialized:', initialHistoryState);
     } catch (error) {
       console.error('Failed to load todos:', error);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Convert todos to flow nodes with position preservation
+  const todosToNodes = (todoList: any[]): Node[] => {
+    return todoList.map((todo, index) => {
+      // Check if this node already exists to preserve its position
+      const existingNode = nodes.find(node => node.id === `todo-${todo.id}`);
+      const position = existingNode ? existingNode.position : { 
+        x: 250 + (index % 3) * 300, 
+        y: 100 + Math.floor(index / 3) * 150 
+      };
+      
+      return {
+        id: `todo-${todo.id}`,
+        type: 'todo',
+        position,
+        data: {
+          todo,
+          onUpdate: handleTodoUpdate,
+          onDelete: handleTodoDelete,
+        },
+      };
+    });
   };
 
   useEffect(() => {
@@ -114,15 +383,50 @@ const FlowEditor = () => {
     (params: Connection) => {
       // Ensure connection has both source and target
       if (params.source && params.target) {
-        setEdges((eds) => addEdge({
+        // Prevent self-connections
+        if (params.source === params.target) {
+          return;
+        }
+        
+        // Allow multiple connections - only prevent exact duplicates
+        const existingEdge = edges.find(
+          edge => 
+            edge.source === params.source && 
+            edge.target === params.target &&
+            edge.sourceHandle === params.sourceHandle &&
+            edge.targetHandle === params.targetHandle
+        );
+        
+        if (existingEdge) {
+          return; // Only prevent exact duplicates
+        }
+        
+        const newEdge = {
           ...params,
-          id: `edge-${params.source}-${params.target}`,
-          type: 'smoothstep',
-          animated: true,
-        }, eds));
+          id: `edge-${params.source}-${params.sourceHandle || 'default'}-${params.target}-${params.targetHandle || 'default'}-${Date.now()}`,
+          type: 'curvy', // use the custom edge type
+          animated: false,
+        };
+        
+        // Track this as an individual connection action
+        const connectionAction: ConnectionAction = {
+          type: 'add',
+          edge: newEdge
+        };
+        
+        setEdges((eds) => {
+          const newEdges = addEdge(newEdge, eds);
+          // Save to history with connection action
+          setTimeout(() => {
+            if (!isUndoRedoAction.current) {
+              saveToHistory(nodes, newEdges, connectionAction);
+            }
+          }, 100);
+          return newEdges;
+        });
       }
     },
-    [setEdges],
+    [setEdges, edges, nodes, saveToHistory],
   );
 
   const addNewTodo = async () => {
@@ -133,14 +437,25 @@ const FlowEditor = () => {
         priority: 'medium'
       };
       await todoService.createTodo(newTodo);
-      await loadTodos(); // Reload to show new todo
+      
+      // Get the new todo data
+      const todoData = await todoService.getAllTodos();
+      setTodos(todoData as any);
+      
+      // Create new nodes while preserving existing positions
+      const newNodes = todosToNodes(todoData as any);
+      setNodes(newNodes);
     } catch (error) {
       console.error('Failed to create todo:', error);
     }
   };
 
   const refreshTodos = () => {
-    loadTodos();
+    // Preserve positions when refreshing
+    const todoData = todoService.getAllTodos();
+    setTodos(todoData as any);
+    const newNodes = todosToNodes(todoData as any);
+    setNodes(newNodes);
   };
 
   const saveFlow = async () => {
@@ -188,6 +503,28 @@ const FlowEditor = () => {
               <RefreshCw size={14} className="mr-1 sm:mr-2" />
               Refresh
             </Button>
+            <Button 
+              onClick={() => {
+                console.log('Undo clicked, historyIndex:', historyIndex, 'history length:', history.length);
+                undo();
+              }}
+              disabled={historyIndex <= 0}
+              className="neo-brutal bg-white hover:bg-gray-100 text-black font-bold text-xs sm:text-sm px-3 sm:px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Undo2 size={14} className="mr-1 sm:mr-2" />
+              Undo {historyIndex > 0 ? `(${historyIndex})` : ''}
+            </Button>
+            <Button 
+              onClick={() => {
+                console.log('Redo clicked, historyIndex:', historyIndex, 'history length:', history.length);
+                redo();
+              }}
+              disabled={historyIndex >= history.length - 1}
+              className="neo-brutal bg-white hover:bg-gray-100 text-black font-bold text-xs sm:text-sm px-3 sm:px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Redo2 size={14} className="mr-1 sm:mr-2" />
+              Redo {historyIndex < history.length - 1 ? `(${history.length - historyIndex - 1})` : ''}
+            </Button>
           </div>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -213,16 +550,32 @@ const FlowEditor = () => {
         <ReactFlow
           nodes={nodes}
           edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
+          onNodesChange={handleNodesChange}
+          onEdgesChange={handleEdgesChange}
           onConnect={onConnect}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
           fitView
           attributionPosition="top-right"
           connectionMode={ConnectionMode.Loose}
           snapToGrid={true}
           snapGrid={[15, 15]}
           style={{ backgroundColor: '#ffffff' }}
+          deleteKeyCode="Delete"
+          multiSelectionKeyCode="Shift"
+          panOnDrag={true}
+          panOnScroll={false}
+          zoomOnScroll={true}
+          zoomOnPinch={true}
+          zoomOnDoubleClick={false}
+          preventScrolling={true}
+          nodesDraggable={true}
+          nodesConnectable={true}
+          elementsSelectable={true}
+          selectNodesOnDrag={false}
+          connectionRadius={30}
+          connectionLineStyle={{ stroke: '#000', strokeWidth: 2 }}
+          defaultEdgeOptions={{ type: 'curvy' }}
         >
           <Controls />
           <MiniMap />

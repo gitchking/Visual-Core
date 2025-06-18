@@ -1,14 +1,16 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { getDatabase, initDatabase } from '@/lib/database';
-import { Database, Users, MessageSquare, Download } from 'lucide-react';
+import { Database, Users, MessageSquare, Download, Shield, User, UserCheck } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import OAuthTest from '@/components/auth/OAuthTest';
 
 const DevTool = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [dbData, setDbData] = useState<any>(null);
+  const { user, profile, signOut } = useAuth();
 
   const handleLogin = () => {
     if (password === 'Daman@2005') {
@@ -111,6 +113,104 @@ const DevTool = () => {
               Export Database
             </Button>
           </div>
+        </div>
+
+        {/* User Information Section */}
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <UserCheck className="text-green-600" />
+            User Information
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <h3 className="font-medium text-gray-700">Authentication Status</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Logged In:</span>
+                  <span className={`text-sm font-medium ${user ? 'text-green-600' : 'text-red-600'}`}>
+                    {user ? 'Yes' : 'No'}
+                  </span>
+                </div>
+                {user && (
+                  <>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">User ID:</span>
+                      <span className="text-sm font-mono text-gray-800">{user.id}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Email:</span>
+                      <span className="text-sm text-gray-800">{user.email}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Created:</span>
+                      <span className="text-sm text-gray-800">
+                        {new Date(user.created_at).toLocaleString()}
+                      </span>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              <h3 className="font-medium text-gray-700">Profile Information</h3>
+              <div className="space-y-2">
+                {profile ? (
+                  <>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Username:</span>
+                      <span className="text-sm font-medium text-gray-800">{profile.username || 'Not set'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Full Name:</span>
+                      <span className="text-sm text-gray-800">{profile.full_name || 'Not set'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Gender:</span>
+                      <span className="text-sm text-gray-800">{profile.gender || 'Not set'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Bio:</span>
+                      <span className="text-sm text-gray-800">{profile.bio || 'Not set'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Website:</span>
+                      <span className="text-sm text-gray-800">{profile.website || 'Not set'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Profile Updated:</span>
+                      <span className="text-sm text-gray-800">
+                        {new Date(profile.updated_at).toLocaleString()}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-sm text-gray-500">No profile data available</div>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          {user && (
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <Button 
+                onClick={signOut} 
+                variant="outline" 
+                className="text-red-600 hover:text-red-700"
+              >
+                Sign Out
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* OAuth Test Section */}
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <Shield className="text-purple-600" />
+            Authentication Test
+          </h2>
+          <OAuthTest />
         </div>
 
         {dbData && (

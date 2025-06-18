@@ -1,11 +1,11 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { X, Link as LinkIcon, Globe } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { X, Link as LinkIcon, Globe, Hash, Sparkles } from 'lucide-react';
 
 interface CreateThreadDialogProps {
   isOpen: boolean;
@@ -19,6 +19,7 @@ const CreateThreadDialog: React.FC<CreateThreadDialogProps> = ({ isOpen, onClose
   const [tags, setTags] = useState('');
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [urlPreview, setUrlPreview] = useState<{ domain: string; favicon: string } | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const extractDomain = (url: string) => {
     try {
@@ -49,21 +50,36 @@ const CreateThreadDialog: React.FC<CreateThreadDialogProps> = ({ isOpen, onClose
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (title.trim() && content.trim()) {
-      onSubmit({
-        title: title.trim(),
-        content: content.trim(),
-        tags: tags.trim(),
-        websiteUrl: websiteUrl.trim() || undefined
-      });
-      setTitle('');
-      setContent('');
-      setTags('');
-      setWebsiteUrl('');
-      setUrlPreview(null);
-      onClose();
+      setIsSubmitting(true);
+      try {
+        await onSubmit({
+          title: title.trim(),
+          content: content.trim(),
+          tags: tags.trim(),
+          websiteUrl: websiteUrl.trim() || undefined
+        });
+        setTitle('');
+        setContent('');
+        setTags('');
+        setWebsiteUrl('');
+        setUrlPreview(null);
+      } catch (error) {
+        console.error('Failed to create thread:', error);
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
+  };
+
+  const suggestedTags = ['workflow', 'automation', 'productivity', 'tools', 'tips', 'tutorial'];
+
+  const addTag = (tag: string) => {
+    const currentTags = tags.split(',').map(t => t.trim()).filter(t => t);
+    if (!currentTags.includes(tag)) {
+      setTags([...currentTags, tag].join(', '));
     }
   };
 
@@ -72,8 +88,17 @@ const CreateThreadDialog: React.FC<CreateThreadDialogProps> = ({ isOpen, onClose
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto neo-card">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-2xl text-black">Create New Thread</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=default" />
+              <AvatarFallback className="bg-purple-accent text-white text-xs">U</AvatarFallback>
+            </Avatar>
+            <div>
+              <CardTitle className="text-xl text-black">Create New Thread</CardTitle>
+              <p className="text-sm text-gray-500">Share your workflow with the community</p>
+            </div>
+          </div>
           <Button
             variant="ghost"
             size="icon"
@@ -83,7 +108,7 @@ const CreateThreadDialog: React.FC<CreateThreadDialogProps> = ({ isOpen, onClose
             <X size={20} />
           </Button>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-black mb-2">
@@ -92,10 +117,14 @@ const CreateThreadDialog: React.FC<CreateThreadDialogProps> = ({ isOpen, onClose
               <Input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Enter thread title..."
-                className="neo-brutal"
+                placeholder="What's your workflow about?"
+                className="neo-brutal text-lg"
                 required
+                maxLength={100}
               />
+              <div className="text-xs text-gray-500 mt-1 text-right">
+                {title.length}/100
+              </div>
             </div>
 
             <div>
@@ -105,10 +134,49 @@ const CreateThreadDialog: React.FC<CreateThreadDialogProps> = ({ isOpen, onClose
               <Textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder="Describe your workflow or share your thoughts..."
-                className="neo-brutal min-h-[100px] resize-none"
+                placeholder="Describe your workflow, share your experience, or ask for help..."
+                className="neo-brutal min-h-[120px] resize-none text-base"
                 required
+                maxLength={1000}
               />
+              <div className="text-xs text-gray-500 mt-1 text-right">
+                {content.length}/1000
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-black mb-2">
+                Tags
+              </label>
+              <div className="space-y-3">
+                <div className="relative">
+                  <Hash className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    value={tags}
+                    onChange={(e) => setTags(e.target.value)}
+                    placeholder="workflow, automation, productivity (comma separated)"
+                    className="pl-10 neo-brutal"
+                  />
+                </div>
+                
+                {suggestedTags.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-gray-500">Suggested tags:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {suggestedTags.map((tag) => (
+                        <Badge
+                          key={tag}
+                          variant="outline"
+                          className="cursor-pointer hover:bg-purple-accent hover:text-white transition-colors"
+                          onClick={() => addTag(tag)}
+                        >
+                          #{tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div>
@@ -127,7 +195,7 @@ const CreateThreadDialog: React.FC<CreateThreadDialogProps> = ({ isOpen, onClose
                 </div>
                 
                 {urlPreview && (
-                  <div className="p-3 border border-black bg-purple-accent/10 flex items-center gap-3">
+                  <div className="p-3 border border-purple-accent bg-purple-accent/10 rounded-lg flex items-center gap-3">
                     <img 
                       src={urlPreview.favicon} 
                       alt="Site icon"
@@ -147,33 +215,32 @@ const CreateThreadDialog: React.FC<CreateThreadDialogProps> = ({ isOpen, onClose
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-black mb-2">
-                Tags (Optional)
-              </label>
-              <Input
-                value={tags}
-                onChange={(e) => setTags(e.target.value)}
-                placeholder="workflow, automation, productivity (comma separated)"
-                className="neo-brutal"
-              />
-            </div>
-
-            <div className="flex gap-3 pt-4">
+            <div className="flex gap-3 pt-4 border-t border-gray-100">
               <Button
                 type="button"
                 variant="outline"
                 onClick={onClose}
                 className="flex-1 neo-brutal"
+                disabled={isSubmitting}
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                disabled={!title.trim() || !content.trim()}
+                disabled={!title.trim() || !content.trim() || isSubmitting}
                 className="flex-1 neo-brutal-purple bg-purple-accent"
               >
-                Create Thread
+                {isSubmitting ? (
+                  <>
+                    <Sparkles size={16} className="mr-2 animate-pulse" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={16} className="mr-2" />
+                    Create Thread
+                  </>
+                )}
               </Button>
             </div>
           </form>

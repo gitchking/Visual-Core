@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { Button } from '@/components/ui/button';
@@ -70,7 +69,8 @@ const TodoNode: React.FC<TodoNodeProps> = ({ data }) => {
   };
 
   return (
-    <div className={`min-w-[300px] p-4 rounded-2xl border-4 border-black shadow-brutal bg-white ${todo.completed ? 'opacity-60' : ''}`}>
+    <div className={`min-w-[300px] p-4 rounded-2xl border-4 border-black shadow-brutal bg-white ${todo.completed ? 'opacity-60' : ''} relative`}>
+      {/* Top handle - can receive multiple connections */}
       <Handle 
         type="target" 
         position={Position.Top} 
@@ -79,11 +79,56 @@ const TodoNode: React.FC<TodoNodeProps> = ({ data }) => {
           border: '2px solid #000',
           borderRadius: '50%',
           width: '12px',
-          height: '12px'
+          height: '12px',
+          top: '-6px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 10
         }}
         isConnectable={true}
+        id="top"
       />
       
+      {/* Left handle - can receive multiple connections */}
+      <Handle 
+        type="target" 
+        position={Position.Left} 
+        style={{ 
+          background: '#000', 
+          border: '2px solid #000',
+          borderRadius: '50%',
+          width: '12px',
+          height: '12px',
+          left: '-6px',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          zIndex: 10
+        }}
+        isConnectable={true}
+        id="left"
+      />
+      
+      {/* Right handle - can send multiple connections */}
+      <Handle 
+        type="source" 
+        position={Position.Right} 
+        style={{ 
+          background: '#000', 
+          border: '2px solid #000',
+          borderRadius: '50%',
+          width: '12px',
+          height: '12px',
+          right: '-6px',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          zIndex: 10
+        }}
+        isConnectable={true}
+        id="right"
+      />
+      
+      {/* Content area */}
+      <div className="relative z-0">
       {isEditing ? (
         <div className="space-y-3" onClick={(e) => e.stopPropagation()}>
           <Input
@@ -175,7 +220,9 @@ const TodoNode: React.FC<TodoNodeProps> = ({ data }) => {
           </div>
         </div>
       )}
+      </div>
       
+      {/* Bottom handle - can send multiple connections */}
       <Handle 
         type="source" 
         position={Position.Bottom} 
@@ -184,9 +231,14 @@ const TodoNode: React.FC<TodoNodeProps> = ({ data }) => {
           border: '2px solid #000',
           borderRadius: '50%',
           width: '12px',
-          height: '12px'
+          height: '12px',
+          bottom: '-6px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 10
         }}
         isConnectable={true}
+        id="bottom"
       />
     </div>
   );
