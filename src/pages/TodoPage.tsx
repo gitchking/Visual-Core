@@ -66,39 +66,41 @@ const TodoPage = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Loading todos...</div>
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="text-lg text-black">Loading todos...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-purple-50 py-8">
+    <div className="min-h-screen bg-white py-8">
       <div className="max-w-4xl mx-auto px-6">
         <div className="mb-8">
-          <h1 className="text-4xl font-black mb-2">Todo Flow</h1>
-          <p className="text-gray-600">Manage your tasks and convert them to visual flows</p>
+          <h1 className="text-4xl font-black mb-2 text-black">Todo Flow</h1>
+          <p className="text-slate-600">Manage your tasks and convert them to visual flows</p>
         </div>
 
         {/* Add New Todo */}
-        <div className="bg-white rounded-2xl p-6 shadow-lg mb-8">
-          <h2 className="text-xl font-semibold mb-4">Add New Task</h2>
+        <div className="bg-white rounded-2xl p-6 neo-card mb-8">
+          <h2 className="text-xl font-semibold mb-4 text-black">Add New Task</h2>
           <div className="space-y-4">
             <Input
               placeholder="Task title..."
               value={newTodo.title}
               onChange={(e) => setNewTodo({ ...newTodo, title: e.target.value })}
+              className="bg-white border-black"
             />
             <Textarea
               placeholder="Task description..."
               value={newTodo.description}
               onChange={(e) => setNewTodo({ ...newTodo, description: e.target.value })}
+              className="bg-white border-black"
             />
             <div className="flex gap-4">
               <select
                 value={newTodo.priority}
                 onChange={(e) => setNewTodo({ ...newTodo, priority: e.target.value })}
-                className="px-3 py-2 border rounded-lg"
+                className="px-3 py-2 border-2 border-black rounded-lg bg-white text-black"
               >
                 <option value="low">Low Priority</option>
                 <option value="medium">Medium Priority</option>
@@ -117,9 +119,9 @@ const TodoPage = () => {
           {todos.map((todo) => (
             <div
               key={todo.id}
-              className={`bg-white rounded-xl p-6 shadow-lg border-l-4 ${
+              className={`bg-white rounded-xl p-6 neo-card border-l-4 ${
                 todo.priority === 'high' ? 'border-red-500' :
-                todo.priority === 'medium' ? 'border-yellow-500' : 'border-green-500'
+                todo.priority === 'medium' ? 'border-purple-500' : 'border-green-500'
               }`}
             >
               <div className="flex items-start justify-between">
@@ -128,24 +130,24 @@ const TodoPage = () => {
                     <button
                       onClick={() => handleToggleComplete(todo.id, todo.completed)}
                       className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                        todo.completed ? 'bg-green-500 border-green-500' : 'border-gray-300'
+                        todo.completed ? 'bg-green-500 border-green-500' : 'border-gray-400'
                       }`}
                     >
                       {todo.completed && <Check size={14} className="text-white" />}
                     </button>
-                    <h3 className={`font-semibold ${todo.completed ? 'line-through text-gray-500' : ''}`}>
+                    <h3 className={`font-semibold text-black ${todo.completed ? 'line-through text-gray-500' : ''}`}>
                       {todo.title}
                     </h3>
                     <span className={`px-2 py-1 text-xs rounded-full ${
-                      todo.priority === 'high' ? 'bg-red-100 text-red-600' :
-                      todo.priority === 'medium' ? 'bg-yellow-100 text-yellow-600' :
-                      'bg-green-100 text-green-600'
+                      todo.priority === 'high' ? 'bg-red-100 text-red-700' :
+                      todo.priority === 'medium' ? 'bg-purple-100 text-purple-700' :
+                      'bg-green-100 text-green-700'
                     }`}>
                       {todo.priority}
                     </span>
                   </div>
                   {todo.description && (
-                    <p className={`text-gray-600 ml-9 ${todo.completed ? 'line-through' : ''}`}>
+                    <p className={`text-slate-600 ml-9 ${todo.completed ? 'line-through' : ''}`}>
                       {todo.description}
                     </p>
                   )}
@@ -157,7 +159,7 @@ const TodoPage = () => {
                   <Button variant="outline" size="sm" onClick={() => handleDeleteTodo(todo.id)}>
                     <X size={14} />
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button variant="secondary" size="sm">
                     <Workflow size={14} />
                   </Button>
                 </div>
@@ -168,11 +170,11 @@ const TodoPage = () => {
 
         {todos.length === 0 && (
           <div className="text-center py-12">
-            <div className="text-gray-400 mb-4">
+            <div className="text-slate-400 mb-4">
               <Plus size={48} className="mx-auto" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-600 mb-2">No tasks yet</h3>
-            <p className="text-gray-500">Create your first task to get started with VisualFlow</p>
+            <h3 className="text-xl font-semibold text-slate-700 mb-2">No tasks yet</h3>
+            <p className="text-slate-500">Create your first task to get started with VisualFlow</p>
           </div>
         )}
       </div>
