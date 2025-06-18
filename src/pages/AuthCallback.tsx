@@ -1,19 +1,28 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 
 const AuthCallback: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('Processing authentication...');
 
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        // Get the session from the URL hash
-        const { data, error } = await supabase?.auth.getSession();
+        // Check if we have a valid Supabase client
+        if (!supabase) {
+          setStatus('error');
+          setMessage('Authentication service not configured. Please contact support.');
+          setTimeout(() => navigate('/'), 3000);
+          return;
+        }
+
+        // Handle the auth callback from URL parameters
+        const { data, error } = await supabase.auth.getSession();
         
         if (error) {
           console.error('Auth callback error:', error);
@@ -28,8 +37,17 @@ const AuthCallback: React.FC = () => {
           setMessage('Authentication successful! Redirecting...');
           setTimeout(() => navigate('/'), 1500);
         } else {
-          setStatus('error');
-          setMessage('No session found. Please try signing in again.');
+          // Check if there are error parameters in the URL
+          const errorParam = searchParams.get('error');
+          const errorDescription = searchParams.get('error_description');
+          
+          if (errorParam) {
+            setStatus('error');
+            setMessage(errorDescription || 'Authentication failed. Please try again.');
+          } else {
+            setStatus('error');
+            setMessage('No session found. Please try signing in again.');
+          }
           setTimeout(() => navigate('/'), 3000);
         }
       } catch (error) {
@@ -41,7 +59,7 @@ const AuthCallback: React.FC = () => {
     };
 
     handleAuthCallback();
-  }, [navigate]);
+  }, [navigate, searchParams]);
 
   const getIcon = () => {
     switch (status) {
