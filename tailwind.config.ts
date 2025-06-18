@@ -67,15 +67,14 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// Vibrant accent colors
+				// Only two vibrant accent colors
 				'pink-accent': 'rgb(var(--pink-accent))',
-				'yellow-accent': 'rgb(var(--yellow-accent))',
 				'blue-accent': 'rgb(var(--blue-accent))',
 			},
 			borderRadius: {
-				lg: 'var(--radius)',
-				md: 'calc(var(--radius) - 2px)',
-				sm: 'calc(var(--radius) - 4px)'
+				lg: '0px',
+				md: '0px',
+				sm: '0px'
 			},
 			keyframes: {
 				'accordion-down': {

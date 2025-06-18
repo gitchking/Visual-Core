@@ -3,7 +3,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Premium black-and-white design system with vibrant accents */
+/* Premium black-and-white design system with neobrutalism punch effects */
 
 @layer base {
   :root {
@@ -31,11 +31,11 @@
     --destructive: 239 68 68;
     --destructive-foreground: 255 255 255;
 
-    --border: 229 229 229;
-    --input: 229 229 229;
+    --border: 0 0 0;
+    --input: 0 0 0;
     --ring: 0 0 0;
 
-    --radius: 0.5rem;
+    --radius: 0px;
 
     --sidebar-background: 255 255 255;
     --sidebar-foreground: 0 0 0;
@@ -43,12 +43,11 @@
     --sidebar-primary-foreground: 255 255 255;
     --sidebar-accent: 245 245 245;
     --sidebar-accent-foreground: 0 0 0;
-    --sidebar-border: 229 229 229;
+    --sidebar-border: 0 0 0;
     --sidebar-ring: 0 0 0;
 
-    /* Vibrant accent colors */
+    /* Only two vibrant accent colors */
     --pink-accent: 255 78 205;
-    --yellow-accent: 255 230 0;
     --blue-accent: 63 140 255;
   }
 
@@ -77,8 +76,8 @@
     --destructive: 239 68 68;
     --destructive-foreground: 255 255 255;
 
-    --border: 38 38 38;
-    --input: 38 38 38;
+    --border: 255 255 255;
+    --input: 255 255 255;
     --ring: 255 255 255;
 
     --sidebar-background: 0 0 0;
@@ -87,7 +86,7 @@
     --sidebar-primary-foreground: 0 0 0;
     --sidebar-accent: 38 38 38;
     --sidebar-accent-foreground: 255 255 255;
-    --sidebar-border: 38 38 38;
+    --sidebar-border: 255 255 255;
     --sidebar-ring: 255 255 255;
   }
 }
@@ -103,14 +102,10 @@
   }
 }
 
-/* Vibrant accent utilities */
+/* Neobrutalism utilities */
 @layer utilities {
   .bg-pink-accent {
     background-color: rgb(var(--pink-accent));
-  }
-  
-  .bg-yellow-accent {
-    background-color: rgb(var(--yellow-accent));
   }
   
   .bg-blue-accent {
@@ -121,10 +116,6 @@
     color: rgb(var(--pink-accent));
   }
   
-  .text-yellow-accent {
-    color: rgb(var(--yellow-accent));
-  }
-  
   .text-blue-accent {
     color: rgb(var(--blue-accent));
   }
@@ -133,12 +124,63 @@
     border-color: rgb(var(--pink-accent));
   }
   
-  .border-yellow-accent {
-    border-color: rgb(var(--yellow-accent));
-  }
-  
   .border-blue-accent {
     border-color: rgb(var(--blue-accent));
+  }
+
+  /* Neobrutalism punch effects */
+  .neo-brutal {
+    border: 3px solid black;
+    box-shadow: 6px 6px 0px 0px black;
+    transition: all 0.2s ease;
+  }
+
+  .neo-brutal:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 8px 8px 0px 0px black;
+  }
+
+  .neo-brutal:active {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px 0px black;
+  }
+
+  .neo-brutal-pink {
+    border: 3px solid rgb(var(--pink-accent));
+    box-shadow: 6px 6px 0px 0px rgb(var(--pink-accent));
+    transition: all 0.2s ease;
+  }
+
+  .neo-brutal-pink:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 8px 8px 0px 0px rgb(var(--pink-accent));
+  }
+
+  .neo-brutal-pink:active {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px 0px rgb(var(--pink-accent));
+  }
+
+  .neo-brutal-blue {
+    border: 3px solid rgb(var(--blue-accent));
+    box-shadow: 6px 6px 0px 0px rgb(var(--blue-accent));
+    transition: all 0.2s ease;
+  }
+
+  .neo-brutal-blue:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 8px 8px 0px 0px rgb(var(--blue-accent));
+  }
+
+  .neo-brutal-blue:active {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px 0px rgb(var(--blue-accent));
+  }
+
+  .neo-card {
+    border: 2px solid black;
+    box-shadow: 4px 4px 0px 0px black;
+    background: white;
   }
 
   .hover-lift {
@@ -173,7 +215,8 @@
 
 ::-webkit-scrollbar-thumb {
   background: rgb(var(--foreground));
-  border-radius: 4px;
+  border-radius: 0px;
+  border: 1px solid black;
 }
 
 ::-webkit-scrollbar-thumb:hover {
