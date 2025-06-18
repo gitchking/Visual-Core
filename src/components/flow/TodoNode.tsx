@@ -43,14 +43,21 @@ const TodoNode: React.FC<TodoNodeProps> = ({ data }) => {
     setIsEditing(false);
   };
 
-  const toggleComplete = async () => {
+  const toggleComplete = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent node from being dragged when clicking
     await onUpdate(todo.id, {
       completed: !todo.completed,
     });
   };
 
-  const handleDelete = async () => {
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent node from being dragged when clicking
     await onDelete(todo.id);
+  };
+
+  const handleEdit = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent node from being dragged when clicking
+    setIsEditing(true);
   };
 
   const getPriorityColor = (priority: string) => {
@@ -64,10 +71,15 @@ const TodoNode: React.FC<TodoNodeProps> = ({ data }) => {
 
   return (
     <div className={`min-w-[300px] p-4 rounded-lg border-2 shadow-lg ${getPriorityColor(todo.priority)} ${todo.completed ? 'opacity-60' : ''}`}>
-      <Handle type="target" position={Position.Top} style={{ background: '#555' }} />
+      <Handle 
+        type="target" 
+        position={Position.Top} 
+        style={{ background: '#555' }}
+        isConnectable={true}
+      />
       
       {isEditing ? (
-        <div className="space-y-3">
+        <div className="space-y-3" onClick={(e) => e.stopPropagation()}>
           <Input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -116,7 +128,7 @@ const TodoNode: React.FC<TodoNodeProps> = ({ data }) => {
                 <Check size={14} />
               </Button>
               <Button
-                onClick={() => setIsEditing(true)}
+                onClick={handleEdit}
                 variant="outline"
                 size="sm"
                 className="p-2"
@@ -157,7 +169,12 @@ const TodoNode: React.FC<TodoNodeProps> = ({ data }) => {
         </div>
       )}
       
-      <Handle type="source" position={Position.Bottom} style={{ background: '#555' }} />
+      <Handle 
+        type="source" 
+        position={Position.Bottom} 
+        style={{ background: '#555' }}
+        isConnectable={true}
+      />
     </div>
   );
 };

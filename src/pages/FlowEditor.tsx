@@ -69,11 +69,31 @@ const FlowEditor = () => {
     loadTodos();
   }, []);
 
-  // Update todo and refresh nodes
+  // Update todo without changing node position
   const handleTodoUpdate = async (todoId: number, updates: any) => {
     try {
       await todoService.updateTodo(todoId, updates);
-      await loadTodos(); // Reload to sync changes
+      
+      // Update the local state immediately without reloading
+      const updatedTodos = todos.map((todo: any) => 
+        todo.id === todoId ? { ...todo, ...updates } : todo
+      );
+      setTodos(updatedTodos);
+      
+      // Update nodes while preserving positions
+      setNodes((currentNodes) => 
+        currentNodes.map((node) => 
+          node.id === `todo-${todoId}` 
+            ? {
+                ...node,
+                data: {
+                  ...node.data,
+                  todo: { ...node.data.todo, ...updates }
+                }
+              }
+            : node
+        )
+      );
     } catch (error) {
       console.error('Failed to update todo:', error);
     }
@@ -90,7 +110,17 @@ const FlowEditor = () => {
   };
 
   const onConnect = useCallback(
-    (params: Connection) => setEdges((eds) => addEdge(params, eds)),
+    (params: Connection) => {
+      // Ensure connection has both source and target
+      if (params.source && params.target) {
+        setEdges((eds) => addEdge({
+          ...params,
+          id: `edge-${params.source}-${params.target}`,
+          type: 'smoothstep',
+          animated: true,
+        }, eds));
+      }
+    },
     [setEdges],
   );
 
@@ -178,6 +208,9 @@ const FlowEditor = () => {
           nodeTypes={nodeTypes}
           fitView
           attributionPosition="top-right"
+          connectionMode="loose"
+          snapToGrid={true}
+          snapGrid={[15, 15]}
         >
           <Controls />
           <MiniMap />
