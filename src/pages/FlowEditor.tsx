@@ -111,28 +111,35 @@ const FlowEditor = () => {
   const autoSave = useCallback(async () => {
     if (nodes.length > 0 || edges.length > 0) {
       try {
+        console.log('🔄 Auto-saving flow...', { nodes: nodes.length, edges: edges.length, flowName, currentFlowId });
+        console.log('📊 Sample node data:', nodes[0]);
+        
         if (currentFlowId) {
           // Update existing flow
           await flowService.updateFlow(currentFlowId, {
             name: flowName,
             flow_data: { nodes, edges }
           });
+          console.log('✅ Updated existing flow with ID:', currentFlowId);
         } else {
           // Create new flow
-          const result = await flowService.saveFlow({
+          await flowService.saveFlow({
             name: flowName,
             flow_data: { nodes, edges }
           });
-          // Get the flow ID from the result (we'll need to modify the service to return the ID)
+          // Get the flow ID from the result
           const savedFlow = await flowService.getMostRecentFlow();
           if (savedFlow) {
             setCurrentFlowId(savedFlow.id);
+            console.log('✅ Created new flow with ID:', savedFlow.id);
           }
         }
-        console.log('Flow auto-saved successfully');
+        console.log('✅ Flow auto-saved successfully');
       } catch (error) {
-        console.error('Failed to auto-save flow:', error);
+        console.error('❌ Failed to auto-save flow:', error);
       }
+    } else {
+      console.log('⏭️ Skipping auto-save - no nodes or edges');
     }
   }, [nodes, edges, flowName, currentFlowId]);
 
@@ -330,7 +337,10 @@ const FlowEditor = () => {
   // Load saved flow data
   const loadSavedFlow = async () => {
     try {
+      console.log('🔄 Attempting to load saved flow...');
       const savedFlow = await flowService.getMostRecentFlow();
+      console.log('📊 Retrieved saved flow:', savedFlow);
+      
       if (savedFlow && savedFlow.flow_data) {
         setFlowName(savedFlow.name);
         setCurrentFlowId(savedFlow.id);
@@ -338,6 +348,9 @@ const FlowEditor = () => {
         // Load saved nodes and edges
         const savedNodes = savedFlow.flow_data.nodes || [];
         const savedEdges = savedFlow.flow_data.edges || [];
+        
+        console.log('📊 Loaded saved nodes:', savedNodes.length, 'edges:', savedEdges.length);
+        console.log('📊 Sample saved node:', savedNodes[0]);
         
         // Convert saved nodes to include todo data
         const nodesWithTodoData = await Promise.all(
@@ -347,7 +360,7 @@ const FlowEditor = () => {
               const todoId = parseInt(node.id.replace('todo-', ''));
               const todo = await todoService.getTodoById(todoId);
               if (todo) {
-                return {
+                const restoredNode = {
                   ...node,
                   data: {
                     todo,
@@ -355,12 +368,15 @@ const FlowEditor = () => {
                     onDelete: handleTodoDelete,
                   }
                 };
+                console.log('✅ Restored node with position:', restoredNode.position);
+                return restoredNode;
               }
             }
             return node;
           })
         );
         
+        console.log('✅ Setting nodes with positions:', nodesWithTodoData.length);
         setNodes(nodesWithTodoData);
         setEdges(savedEdges);
         
@@ -377,12 +393,14 @@ const FlowEditor = () => {
         setHistory([initialHistoryState]);
         setHistoryIndex(0);
         
-        console.log('Loaded saved flow:', savedFlow.name);
+        console.log('✅ Loaded saved flow:', savedFlow.name);
         return true;
+      } else {
+        console.log('⏭️ No saved flow found');
+        return false;
       }
-      return false;
     } catch (error) {
-      console.error('Failed to load saved flow:', error);
+      console.error('❌ Failed to load saved flow:', error);
       return false;
     }
   };
@@ -611,12 +629,16 @@ const FlowEditor = () => {
 
   const saveFlow = async () => {
     try {
+      console.log('💾 Manual save triggered...', { nodes: nodes.length, edges: edges.length, currentFlowId });
+      console.log('📊 Sample node for save:', nodes[0]);
+      
       if (currentFlowId) {
         // Update existing flow
         await flowService.updateFlow(currentFlowId, {
           name: flowName,
           flow_data: { nodes, edges }
         });
+        console.log('✅ Manual save: Updated existing flow with ID:', currentFlowId);
       } else {
         // Create new flow
         await flowService.saveFlow({
@@ -627,11 +649,12 @@ const FlowEditor = () => {
         const savedFlow = await flowService.getMostRecentFlow();
         if (savedFlow) {
           setCurrentFlowId(savedFlow.id);
+          console.log('✅ Manual save: Created new flow with ID:', savedFlow.id);
         }
       }
-      console.log('Flow saved successfully');
+      console.log('✅ Manual save completed successfully');
     } catch (error) {
-      console.error('Failed to save flow:', error);
+      console.error('❌ Manual save failed:', error);
     }
   };
 

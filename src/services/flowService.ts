@@ -39,27 +39,37 @@ export const flowService = {
     const row = stmt.getAsObject();
     stmt.free();
     
+    console.log('🔍 Database query result:', row);
+    
     if (row) {
-      return {
+      const flow = {
         ...row,
         flow_data: JSON.parse(row.flow_data as string)
       };
+      console.log('✅ Retrieved flow from database:', flow);
+      return flow;
     }
+    console.log('⏭️ No flow found in database');
     return null;
   },
 
   async saveFlow(flow: { name: string; flow_data: any }) {
+    console.log('💾 Saving flow to database:', { name: flow.name, nodes: flow.flow_data.nodes?.length, edges: flow.flow_data.edges?.length });
     const db = getDatabase();
     const stmt = db.prepare(`
       INSERT INTO flows (name, flow_data, user_id)
       VALUES (?, ?, 1)
     `);
-    stmt.run([flow.name, JSON.stringify(flow.flow_data)]);
+    const flowDataJson = JSON.stringify(flow.flow_data);
+    console.log('📄 Flow data JSON length:', flowDataJson.length);
+    stmt.run([flow.name, flowDataJson]);
     stmt.free();
     saveDatabase();
+    console.log('✅ Flow saved to database');
   },
 
   async updateFlow(id: number, updates: { name?: string; flow_data?: any }) {
+    console.log('🔄 Updating flow in database:', { id, name: updates.name, nodes: updates.flow_data?.nodes?.length, edges: updates.flow_data?.edges?.length });
     const db = getDatabase();
     const setParts = [];
     const values = [];
@@ -70,7 +80,9 @@ export const flowService = {
     }
     if (updates.flow_data !== undefined) {
       setParts.push('flow_data = ?');
-      values.push(JSON.stringify(updates.flow_data));
+      const flowDataJson = JSON.stringify(updates.flow_data);
+      console.log('📄 Updated flow data JSON length:', flowDataJson.length);
+      values.push(flowDataJson);
     }
 
     values.push(id);
@@ -79,5 +91,6 @@ export const flowService = {
     stmt.run(values);
     stmt.free();
     saveDatabase();
+    console.log('✅ Flow updated in database');
   }
 };
