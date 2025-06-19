@@ -466,6 +466,40 @@ const FlowEditor = () => {
 
   useEffect(() => {
     loadTodos();
+    
+    // Test database functionality
+    const testDatabase = async () => {
+      try {
+        console.log('🧪 Testing database functionality...');
+        const testFlow = {
+          name: 'Test Flow',
+          flow_data: {
+            nodes: [
+              {
+                id: 'test-node-1',
+                type: 'todo',
+                position: { x: 100, y: 100 },
+                data: { test: true }
+              }
+            ],
+            edges: []
+          }
+        };
+        
+        await flowService.saveFlow(testFlow);
+        console.log('✅ Test flow saved successfully');
+        
+        const loadedFlow = await flowService.getMostRecentFlow();
+        console.log('✅ Test flow loaded successfully:', loadedFlow?.name);
+        
+        // Clean up test flow
+        console.log('🧹 Test completed');
+      } catch (error) {
+        console.error('❌ Database test failed:', error);
+      }
+    };
+    
+    testDatabase();
   }, []);
 
   // Cleanup auto-save timeout on unmount
@@ -736,6 +770,17 @@ const FlowEditor = () => {
           >
             <Save size={14} className="mr-1 sm:mr-2" />
             Save Flow
+          </Button>
+          <Button 
+            onClick={async () => {
+              console.log('🧪 Test save clicked');
+              console.log('Current nodes:', nodes);
+              console.log('Current edges:', edges);
+              await saveFlow();
+            }} 
+            className="neo-brutal bg-white hover:bg-gray-100 text-black font-bold text-xs sm:text-sm px-3 sm:px-4 py-2 flex-1 sm:flex-none"
+          >
+            Test Save
           </Button>
         </div>
       </div>
