@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { auth as localAuth } from '@/lib/localAuth';
-import ThemeToggle from './ThemeToggle';
 
 interface User {
   id: string;

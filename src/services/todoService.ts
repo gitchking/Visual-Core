@@ -1,4 +1,3 @@
-
 import { getDatabase, saveDatabase } from '@/lib/database';
 
 export const todoService = {
@@ -11,6 +10,15 @@ export const todoService = {
     }
     stmt.free();
     return todos;
+  },
+
+  async getTodoById(id: number) {
+    const db = getDatabase();
+    const stmt = db.prepare('SELECT * FROM todos WHERE id = ?');
+    stmt.run([id]);
+    const todo = stmt.getAsObject();
+    stmt.free();
+    return todo;
   },
 
   async createTodo(todo: { title: string; description: string; priority: string }) {

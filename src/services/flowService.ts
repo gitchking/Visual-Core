@@ -1,4 +1,3 @@
-
 import { getDatabase, saveDatabase } from '@/lib/database';
 
 export const flowService = {
@@ -15,6 +14,38 @@ export const flowService = {
     }
     stmt.free();
     return flows;
+  },
+
+  async getFlowById(id: number) {
+    const db = getDatabase();
+    const stmt = db.prepare('SELECT * FROM flows WHERE id = ?');
+    stmt.run([id]);
+    const row = stmt.getAsObject();
+    stmt.free();
+    
+    if (row) {
+      return {
+        ...row,
+        flow_data: JSON.parse(row.flow_data as string)
+      };
+    }
+    return null;
+  },
+
+  async getMostRecentFlow() {
+    const db = getDatabase();
+    const stmt = db.prepare('SELECT * FROM flows ORDER BY created_at DESC LIMIT 1');
+    stmt.run();
+    const row = stmt.getAsObject();
+    stmt.free();
+    
+    if (row) {
+      return {
+        ...row,
+        flow_data: JSON.parse(row.flow_data as string)
+      };
+    }
+    return null;
   },
 
   async saveFlow(flow: { name: string; flow_data: any }) {

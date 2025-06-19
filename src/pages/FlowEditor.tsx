@@ -97,11 +97,52 @@ const FlowEditor = () => {
   const [flowName, setFlowName] = useState('Todo Flow');
   const [isLoading, setIsLoading] = useState(true);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [currentFlowId, setCurrentFlowId] = useState<number | null>(null);
   
   // Undo/Redo functionality
   const [history, setHistory] = useState<HistoryState[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const isUndoRedoAction = useRef(false);
+
+  // Auto-save functionality
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Auto-save function
+  const autoSave = useCallback(async () => {
+    if (nodes.length > 0 || edges.length > 0) {
+      try {
+        if (currentFlowId) {
+          // Update existing flow
+          await flowService.updateFlow(currentFlowId, {
+            name: flowName,
+            flow_data: { nodes, edges }
+          });
+        } else {
+          // Create new flow
+          const result = await flowService.saveFlow({
+            name: flowName,
+            flow_data: { nodes, edges }
+          });
+          // Get the flow ID from the result (we'll need to modify the service to return the ID)
+          const savedFlow = await flowService.getMostRecentFlow();
+          if (savedFlow) {
+            setCurrentFlowId(savedFlow.id);
+          }
+        }
+        console.log('Flow auto-saved successfully');
+      } catch (error) {
+        console.error('Failed to auto-save flow:', error);
+      }
+    }
+  }, [nodes, edges, flowName, currentFlowId]);
+
+  // Debounced auto-save
+  const debouncedAutoSave = useCallback(() => {
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
+    autoSaveTimeoutRef.current = setTimeout(autoSave, 2000); // Auto-save after 2 seconds of inactivity
+  }, [autoSave]);
 
   // Save current state to history - only content, not positions
   const saveToHistory = useCallback((newNodes: Node[], newEdges: Edge[], connectionAction?: ConnectionAction) => {
@@ -247,10 +288,11 @@ const FlowEditor = () => {
       setTimeout(() => {
         if (!isUndoRedoAction.current) {
           saveToHistory(nodes, edges);
+          debouncedAutoSave();
         }
       }, 100);
     }
-  }, [onNodesChange, nodes, edges, saveToHistory]);
+  }, [onNodesChange, nodes, edges, saveToHistory, debouncedAutoSave]);
 
   // Enhanced edge change handler with history
   const handleEdgesChange = useCallback((changes: any) => {
@@ -270,6 +312,7 @@ const FlowEditor = () => {
         setTimeout(() => {
           if (!isUndoRedoAction.current) {
             saveToHistory(nodes, edges, connectionAction);
+            debouncedAutoSave();
           }
         }, 100);
       });
@@ -278,33 +321,101 @@ const FlowEditor = () => {
       setTimeout(() => {
         if (!isUndoRedoAction.current) {
           saveToHistory(nodes, edges);
+          debouncedAutoSave();
         }
       }, 100);
     }
-  }, [onEdgesChange, nodes, edges, saveToHistory]);
+  }, [onEdgesChange, nodes, edges, saveToHistory, debouncedAutoSave]);
+
+  // Load saved flow data
+  const loadSavedFlow = async () => {
+    try {
+      const savedFlow = await flowService.getMostRecentFlow();
+      if (savedFlow && savedFlow.flow_data) {
+        setFlowName(savedFlow.name);
+        setCurrentFlowId(savedFlow.id);
+        
+        // Load saved nodes and edges
+        const savedNodes = savedFlow.flow_data.nodes || [];
+        const savedEdges = savedFlow.flow_data.edges || [];
+        
+        // Convert saved nodes to include todo data
+        const nodesWithTodoData = await Promise.all(
+          savedNodes.map(async (node: any) => {
+            if (node.type === 'todo') {
+              // Extract todo ID from node ID
+              const todoId = parseInt(node.id.replace('todo-', ''));
+              const todo = await todoService.getTodoById(todoId);
+              if (todo) {
+                return {
+                  ...node,
+                  data: {
+                    todo,
+                    onUpdate: handleTodoUpdate,
+                    onDelete: handleTodoDelete,
+                  }
+                };
+              }
+            }
+            return node;
+          })
+        );
+        
+        setNodes(nodesWithTodoData);
+        setEdges(savedEdges);
+        
+        // Initialize history with loaded state
+        const initialHistoryState: HistoryState = {
+          nodes: nodesWithTodoData.map(node => ({
+            id: node.id,
+            type: node.type,
+            data: node.data,
+          })),
+          edges: savedEdges
+        };
+        
+        setHistory([initialHistoryState]);
+        setHistoryIndex(0);
+        
+        console.log('Loaded saved flow:', savedFlow.name);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Failed to load saved flow:', error);
+      return false;
+    }
+  };
 
   // Load todos and convert to nodes
   const loadTodos = async () => {
     try {
       await initDatabase();
-      const todoData = await todoService.getAllTodos();
-      setTodos(todoData as any);
-      const todoNodes = todosToNodes(todoData as any);
-      setNodes(todoNodes);
       
-      // Initialize history with current state
-      const initialHistoryState: HistoryState = {
-        nodes: todoNodes.map(node => ({
-          id: node.id,
-          type: node.type,
-          data: node.data,
-        })),
-        edges: []
-      };
+      // Try to load saved flow first
+      const flowLoaded = await loadSavedFlow();
       
-      setHistory([initialHistoryState]);
-      setHistoryIndex(0);
-      console.log('History initialized:', initialHistoryState);
+      if (!flowLoaded) {
+        // If no saved flow, load todos and create default nodes
+        const todoData = await todoService.getAllTodos();
+        setTodos(todoData as any);
+        const todoNodes = todosToNodes(todoData as any);
+        setNodes(todoNodes);
+        
+        // Initialize history with current state
+        const initialHistoryState: HistoryState = {
+          nodes: todoNodes.map(node => ({
+            id: node.id,
+            type: node.type,
+            data: node.data,
+          })),
+          edges: []
+        };
+        
+        setHistory([initialHistoryState]);
+        setHistoryIndex(0);
+        console.log('History initialized with todos:', initialHistoryState);
+      }
     } catch (error) {
       console.error('Failed to load todos:', error);
     } finally {
@@ -337,6 +448,15 @@ const FlowEditor = () => {
 
   useEffect(() => {
     loadTodos();
+  }, []);
+
+  // Cleanup auto-save timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
   }, []);
 
   // Update todo without changing node position
@@ -420,13 +540,14 @@ const FlowEditor = () => {
           setTimeout(() => {
             if (!isUndoRedoAction.current) {
               saveToHistory(nodes, newEdges, connectionAction);
+              debouncedAutoSave();
             }
           }, 100);
           return newEdges;
         });
       }
     },
-    [setEdges, edges, nodes, saveToHistory],
+    [setEdges, edges, nodes, saveToHistory, debouncedAutoSave],
   );
 
   const addNewTodo = async () => {
@@ -460,15 +581,36 @@ const FlowEditor = () => {
 
   const saveFlow = async () => {
     try {
-      await flowService.saveFlow({
-        name: flowName,
-        flow_data: { nodes, edges }
-      });
+      if (currentFlowId) {
+        // Update existing flow
+        await flowService.updateFlow(currentFlowId, {
+          name: flowName,
+          flow_data: { nodes, edges }
+        });
+      } else {
+        // Create new flow
+        await flowService.saveFlow({
+          name: flowName,
+          flow_data: { nodes, edges }
+        });
+        // Get the flow ID from the result
+        const savedFlow = await flowService.getMostRecentFlow();
+        if (savedFlow) {
+          setCurrentFlowId(savedFlow.id);
+        }
+      }
       console.log('Flow saved successfully');
     } catch (error) {
       console.error('Failed to save flow:', error);
     }
   };
+
+  // Auto-save when flow name changes
+  useEffect(() => {
+    if (!isLoading) {
+      debouncedAutoSave();
+    }
+  }, [flowName, debouncedAutoSave, isLoading]);
 
   if (isLoading) {
     return (
