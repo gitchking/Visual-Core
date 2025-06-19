@@ -435,7 +435,7 @@ const FlowEditor = () => {
         console.log('📊 Loaded saved nodes:', savedNodes.length, 'edges:', savedEdges.length);
         console.log('📊 Sample saved node:', savedNodes[0]);
         
-        // Convert saved nodes to include todo data
+        // Restore todo data for each node, but keep their position as is
         const nodesWithTodoData = await Promise.all(
           savedNodes.map(async (node: any) => {
             if (node.type === 'todo') {
@@ -443,16 +443,14 @@ const FlowEditor = () => {
               const todoId = parseInt(node.id.replace('todo-', ''));
               const todo = await todoService.getTodoById(todoId);
               if (todo) {
-                const restoredNode = {
-                  ...node,
+                return {
+                  ...node, // keep position and all properties
                   data: {
                     todo,
                     onUpdate: handleTodoUpdate,
                     onDelete: handleTodoDelete,
                   }
                 };
-                console.log('✅ Restored node with position:', restoredNode.position);
-                return restoredNode;
               }
             }
             return node;
@@ -463,12 +461,11 @@ const FlowEditor = () => {
         setNodes(nodesWithTodoData);
         setEdges(savedEdges);
         
-        // Initialize history with loaded state
+        // Initialize history with loaded state (preserve position)
         const initialHistoryState: HistoryState = {
           nodes: nodesWithTodoData.map(node => ({
-            id: node.id,
-            type: node.type,
-            data: node.data,
+            ...node,
+            type: node.type || 'todo', // ensure type is present
           })),
           edges: savedEdges
         };
@@ -510,12 +507,11 @@ const FlowEditor = () => {
         console.log('📊 Created todo nodes:', todoNodes.length);
         setNodes(todoNodes);
         
-        // Initialize history with current state
+        // Initialize history with current state (preserve position)
         const initialHistoryState: HistoryState = {
           nodes: todoNodes.map(node => ({
-            id: node.id,
-            type: node.type,
-            data: node.data,
+            ...node,
+            type: node.type || 'todo', // ensure type is present
           })),
           edges: []
         };
