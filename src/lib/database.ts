@@ -4,35 +4,35 @@ let SQL: any = null;
 let db: any = null;
 
 export const initDatabase = async () => {
-  console.log('Initializing database...');
+  console.log('🔧 Initializing database...');
   if (!SQL) {
-    console.log('Loading SQL.js...');
+    console.log('📦 Loading SQL.js...');
     SQL = await initSqlJs({
       locateFile: (file: string) => `https://sql.js.org/dist/${file}`
     });
-    console.log('SQL.js loaded');
+    console.log('✅ SQL.js loaded');
   }
 
   if (!db) {
-    console.log('Setting up database...');
+    console.log('🗄️ Setting up database...');
     // Try to load existing database from localStorage
     const savedDb = localStorage.getItem('visualflow-db');
     if (savedDb) {
-      console.log('Loading existing database from localStorage...');
+      console.log('📂 Loading existing database from localStorage...');
       const uint8Array = new Uint8Array(JSON.parse(savedDb));
       db = new SQL.Database(uint8Array);
       // Check if migration is needed
       await checkAndMigrateDatabase();
-      console.log('Existing database loaded and migrated');
+      console.log('✅ Existing database loaded and migrated');
     } else {
-      console.log('Creating new database...');
+      console.log('🆕 Creating new database...');
       db = new SQL.Database();
       await initializeTables();
-      console.log('New database created');
+      console.log('✅ New database created');
     }
   }
 
-  console.log('Database ready');
+  console.log('✅ Database ready');
   return db;
 };
 
@@ -167,6 +167,7 @@ const initializeTables = async () => {
   `);
 
   // Flow data table
+  console.log('📋 Creating flows table...');
   db.run(`
     CREATE TABLE IF NOT EXISTS flows (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -177,6 +178,7 @@ const initializeTables = async () => {
       FOREIGN KEY (user_id) REFERENCES users (id)
     )
   `);
+  console.log('✅ Flows table created/verified');
 
   // Community threads table
   db.run(`

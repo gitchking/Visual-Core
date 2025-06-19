@@ -408,16 +408,23 @@ const FlowEditor = () => {
   // Load todos and convert to nodes
   const loadTodos = async () => {
     try {
+      console.log('🚀 Starting loadTodos...');
       await initDatabase();
+      console.log('✅ Database initialized');
       
       // Try to load saved flow first
+      console.log('🔄 Attempting to load saved flow...');
       const flowLoaded = await loadSavedFlow();
+      console.log('📊 Flow loaded result:', flowLoaded);
       
       if (!flowLoaded) {
+        console.log('⏭️ No saved flow found, loading todos...');
         // If no saved flow, load todos and create default nodes
         const todoData = await todoService.getAllTodos();
+        console.log('📊 Loaded todos:', todoData.length);
         setTodos(todoData as any);
         const todoNodes = todosToNodes(todoData as any);
+        console.log('📊 Created todo nodes:', todoNodes.length);
         setNodes(todoNodes);
         
         // Initialize history with current state
@@ -432,12 +439,15 @@ const FlowEditor = () => {
         
         setHistory([initialHistoryState]);
         setHistoryIndex(0);
-        console.log('History initialized with todos:', initialHistoryState);
+        console.log('✅ History initialized with todos:', initialHistoryState);
+      } else {
+        console.log('✅ Flow loaded successfully, skipping todo initialization');
       }
     } catch (error) {
-      console.error('Failed to load todos:', error);
+      console.error('❌ Failed to load todos:', error);
     } finally {
       setIsLoading(false);
+      console.log('🏁 Loading completed');
     }
   };
 
