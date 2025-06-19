@@ -22,7 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Save, Plus, RefreshCw, Share, Undo2, Redo2 } from 'lucide-react';
 import { flowService } from '@/services/flowService';
 import { todoService } from '@/services/todoService';
-import { initDatabase } from '@/lib/database';
+import { initDatabase, getDatabase } from '@/lib/database';
 import { useStore } from '@/stores/useStore';
 import TodoNode from '@/components/flow/TodoNode';
 import ShareDialog from '@/components/flow/ShareDialog';
@@ -106,6 +106,89 @@ const FlowEditor = () => {
 
   // Auto-save functionality
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Comprehensive debugging function
+  const runComprehensiveTest = async () => {
+    try {
+      console.log('🔍 === COMPREHENSIVE DEBUGGING START ===');
+      
+      // 1. Check localStorage
+      console.log('📦 === STORAGE CHECK ===');
+      const visualflowDb = localStorage.getItem('visualflow-db');
+      console.log('LocalStorage visualflow-db exists:', !!visualflowDb);
+      console.log('LocalStorage visualflow-db size:', visualflowDb?.length || 0);
+      
+      // 2. Check database connection
+      console.log('🗄️ === DATABASE CHECK ===');
+      const db = getDatabase();
+      console.log('Database object exists:', !!db);
+      
+      // 3. Check flows table
+      console.log('📋 === FLOWS TABLE CHECK ===');
+      try {
+        const stmt = db.prepare('SELECT COUNT(*) as count FROM flows');
+        stmt.run();
+        const result = stmt.getAsObject();
+        stmt.free();
+        console.log('Flows table count:', result.count);
+        
+        // Check all flows
+        const allFlows = await flowService.getAllFlows();
+        console.log('All flows in database:', allFlows.length);
+        allFlows.forEach((flow, index) => {
+          console.log(`Flow ${index + 1}:`, {
+            id: flow.id,
+            name: flow.name,
+            nodes: flow.flow_data?.nodes?.length || 0,
+            edges: flow.flow_data?.edges?.length || 0,
+            created_at: flow.created_at
+          });
+        });
+      } catch (error) {
+        console.error('❌ Error checking flows table:', error);
+      }
+      
+      // 4. Test save functionality
+      console.log('💾 === SAVE FUNCTIONALITY TEST ===');
+      const testFlow = {
+        name: 'Debug Test Flow',
+        flow_data: {
+          nodes: [
+            {
+              id: 'debug-test-node-1',
+              type: 'todo',
+              position: { x: 200, y: 200 },
+              data: { test: true, debug: true }
+            }
+          ],
+          edges: []
+        }
+      };
+      
+      console.log('Saving test flow...');
+      await flowService.saveFlow(testFlow);
+      console.log('✅ Test flow saved');
+      
+      // 5. Test load functionality
+      console.log('📥 === LOAD FUNCTIONALITY TEST ===');
+      const loadedFlow = await flowService.getMostRecentFlow();
+      console.log('Loaded test flow:', loadedFlow);
+      console.log('Test flow nodes:', loadedFlow?.flow_data?.nodes);
+      console.log('Test flow node positions:', loadedFlow?.flow_data?.nodes?.[0]?.position);
+      
+      // 6. Check current state
+      console.log('📊 === CURRENT STATE CHECK ===');
+      console.log('Current nodes:', nodes);
+      console.log('Current edges:', edges);
+      console.log('Current flow ID:', currentFlowId);
+      console.log('Current flow name:', flowName);
+      
+      console.log('🔍 === COMPREHENSIVE DEBUGGING END ===');
+      
+    } catch (error) {
+      console.error('❌ Comprehensive test failed:', error);
+    }
+  };
 
   // Auto-save function
   const autoSave = useCallback(async () => {
@@ -477,39 +560,8 @@ const FlowEditor = () => {
   useEffect(() => {
     loadTodos();
     
-    // Test database functionality
-    const testDatabase = async () => {
-      try {
-        console.log('🧪 Testing database functionality...');
-        const testFlow = {
-          name: 'Test Flow',
-          flow_data: {
-            nodes: [
-              {
-                id: 'test-node-1',
-                type: 'todo',
-                position: { x: 100, y: 100 },
-                data: { test: true }
-              }
-            ],
-            edges: []
-          }
-        };
-        
-        await flowService.saveFlow(testFlow);
-        console.log('✅ Test flow saved successfully');
-        
-        const loadedFlow = await flowService.getMostRecentFlow();
-        console.log('✅ Test flow loaded successfully:', loadedFlow?.name);
-        
-        // Clean up test flow
-        console.log('🧹 Test completed');
-      } catch (error) {
-        console.error('❌ Database test failed:', error);
-      }
-    };
-    
-    testDatabase();
+    // Run comprehensive test on load
+    runComprehensiveTest();
   }, []);
 
   // Cleanup auto-save timeout on unmount
@@ -791,6 +843,12 @@ const FlowEditor = () => {
             className="neo-brutal bg-white hover:bg-gray-100 text-black font-bold text-xs sm:text-sm px-3 sm:px-4 py-2 flex-1 sm:flex-none"
           >
             Test Save
+          </Button>
+          <Button 
+            onClick={runComprehensiveTest} 
+            className="neo-brutal bg-yellow-100 hover:bg-yellow-200 text-black font-bold text-xs sm:text-sm px-3 sm:px-4 py-2 flex-1 sm:flex-none"
+          >
+            Debug All
           </Button>
         </div>
       </div>
