@@ -558,25 +558,55 @@ const FlowEditor = () => {
         priority: 'medium'
       };
       await todoService.createTodo(newTodo);
-      
       // Get the new todo data
       const todoData = await todoService.getAllTodos();
       setTodos(todoData as any);
-      
-      // Create new nodes while preserving existing positions
-      const newNodes = todosToNodes(todoData as any);
-      setNodes(newNodes);
+      // Find the new todo
+      const latestTodo = todoData[0];
+      // Add new node with default position, keep existing nodes as is
+      setNodes((currentNodes) => [
+        ...currentNodes,
+        {
+          id: `todo-${latestTodo.id}`,
+          type: 'todo',
+          position: { x: 250, y: 100 }, // default position for new node
+          data: {
+            todo: latestTodo,
+            onUpdate: handleTodoUpdate,
+            onDelete: handleTodoDelete,
+          },
+        },
+      ]);
     } catch (error) {
       console.error('Failed to create todo:', error);
     }
   };
 
-  const refreshTodos = () => {
-    // Preserve positions when refreshing
-    const todoData = todoService.getAllTodos();
-    setTodos(todoData as any);
-    const newNodes = todosToNodes(todoData as any);
-    setNodes(newNodes);
+  const refreshTodos = async () => {
+    try {
+      const todoData = await todoService.getAllTodos();
+      setTodos(todoData as any);
+      setNodes((currentNodes) =>
+        currentNodes.map((node) => {
+          if (node.type === 'todo') {
+            const todoId = parseInt(node.id.replace('todo-', ''));
+            const updatedTodo = todoData.find((t: any) => t.id === todoId);
+            if (updatedTodo) {
+              return {
+                ...node,
+                data: {
+                  ...node.data,
+                  todo: updatedTodo,
+                },
+              };
+            }
+          }
+          return node;
+        })
+      );
+    } catch (error) {
+      console.error('Failed to refresh todos:', error);
+    }
   };
 
   const saveFlow = async () => {
