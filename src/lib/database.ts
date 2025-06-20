@@ -4,35 +4,35 @@ let SQL: any = null;
 let db: any = null;
 
 export const initDatabase = async () => {
-  console.log('🔧 Initializing database...');
+  console.log('Initializing database...');
   if (!SQL) {
-    console.log('📦 Loading SQL.js...');
+    console.log('Loading SQL.js...');
     SQL = await initSqlJs({
       locateFile: (file: string) => `https://sql.js.org/dist/${file}`
     });
-    console.log('✅ SQL.js loaded');
+    console.log('SQL.js loaded');
   }
 
   if (!db) {
-    console.log('🗄️ Setting up database...');
+    console.log('Setting up database...');
     // Try to load existing database from localStorage
     const savedDb = localStorage.getItem('visualflow-db');
     if (savedDb) {
-      console.log('📂 Loading existing database from localStorage...');
+      console.log('Loading existing database from localStorage...');
       const uint8Array = new Uint8Array(JSON.parse(savedDb));
       db = new SQL.Database(uint8Array);
       // Check if migration is needed
       await checkAndMigrateDatabase();
-      console.log('✅ Existing database loaded and migrated');
+      console.log('Existing database loaded and migrated');
     } else {
-      console.log('🆕 Creating new database...');
+      console.log('Creating new database...');
       db = new SQL.Database();
       await initializeTables();
-      console.log('✅ New database created');
+      console.log('New database created');
     }
   }
 
-  console.log('✅ Database ready');
+  console.log('Database ready');
   return db;
 };
 
@@ -98,6 +98,30 @@ const checkAndMigrateDatabase = async () => {
     // User already exists, ignore error
     console.log('Default user already exists or error adding it:', error);
   }
+
+  // Check if updated_at column exists in flows table
+  try {
+    const stmt = db.prepare("PRAGMA table_info(flows)");
+    const columns = [];
+    while (stmt.step()) {
+      columns.push(stmt.getAsObject());
+    }
+    stmt.free();
+    
+    console.log('Flows table columns:', columns);
+    const hasUpdatedAt = columns.some((col: any) => col.name === 'updated_at');
+    if (!hasUpdatedAt) {
+      console.log('Adding updated_at column to flows table...');
+      db.run('ALTER TABLE flows ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP');
+      saveDatabase();
+      console.log('updated_at column added to flows table');
+    } else {
+      console.log('updated_at column already exists in flows table');
+    }
+  } catch (error) {
+    console.log('Error checking/migrating flows table:', error);
+  }
+
   console.log('Database migration completed');
 };
 
@@ -167,7 +191,6 @@ const initializeTables = async () => {
   `);
 
   // Flow data table
-  console.log('📋 Creating flows table...');
   db.run(`
     CREATE TABLE IF NOT EXISTS flows (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -175,10 +198,10 @@ const initializeTables = async () => {
       name TEXT NOT NULL,
       flow_data TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users (id)
     )
   `);
-  console.log('✅ Flows table created/verified');
 
   // Community threads table
   db.run(`

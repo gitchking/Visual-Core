@@ -56,8 +56,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [session, setSession] = useState<any>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [history, setHistory] = useState<any[]>([]);
-  const [historyIndex, setHistoryIndex] = useState<number>(0);
 
   useEffect(() => {
     // Get initial session
@@ -76,20 +74,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     getInitialSession();
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('flow-history', JSON.stringify(history));
-    localStorage.setItem('flow-history-index', historyIndex.toString());
-  }, [history, historyIndex]);
-
-  useEffect(() => {
-    const savedHistory = localStorage.getItem('flow-history');
-    const savedIndex = localStorage.getItem('flow-history-index');
-    if (savedHistory && savedIndex) {
-      setHistory(JSON.parse(savedHistory));
-      setHistoryIndex(Number(savedIndex));
-    }
   }, []);
 
   const loadProfile = async (userId: string) => {
@@ -189,4 +173,4 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
-}; 
+};
