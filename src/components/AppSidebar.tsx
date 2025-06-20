@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Sidebar,
   SidebarContent,
@@ -13,6 +13,8 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from '@/components/ui/sidebar';
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   Home, 
   CheckSquare, 
@@ -20,7 +22,9 @@ import {
   BarChart3, 
   Users, 
   Megaphone,
-  Settings
+  Settings,
+  LogOut,
+  User
 } from 'lucide-react';
 
 const navigationItems = [
@@ -58,6 +62,17 @@ const navigationItems = [
 
 const AppSidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, signOut, loading } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');
+  };
+
+  const handleSignIn = () => {
+    navigate('/auth');
+  };
 
   return (
     <Sidebar className="bg-white border-r border-black">
@@ -118,8 +133,39 @@ const AppSidebar = () => {
         </SidebarGroup>
       </SidebarContent>
       
-      <SidebarFooter className="bg-white border-t border-black">
-        <div className="px-4 py-2 text-xs text-gray-600">
+      <SidebarFooter className="bg-white border-t border-black p-4">
+        {!loading && (
+          <div className="space-y-2">
+            {user ? (
+              <>
+                <div className="flex items-center gap-2 px-2 py-1">
+                  <User className="w-4 h-4 text-gray-600" />
+                  <span className="text-sm text-gray-600 truncate">
+                    {user.email}
+                  </span>
+                </div>
+                <Button
+                  onClick={handleSignOut}
+                  variant="outline"
+                  size="sm"
+                  className="w-full border-2 border-black text-black hover:bg-red-500 hover:text-white"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sign Out
+                </Button>
+              </>
+            ) : (
+              <Button
+                onClick={handleSignIn}
+                className="w-full bg-purple-accent text-white border-2 border-black"
+              >
+                <User className="w-4 h-4 mr-2" />
+                Sign In
+              </Button>
+            )}
+          </div>
+        )}
+        <div className="text-xs text-gray-600 text-center mt-2">
           © 2024 VisualFlow WebApp
         </div>
       </SidebarFooter>
