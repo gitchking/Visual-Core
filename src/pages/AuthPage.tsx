@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Workflow } from 'lucide-react';
+import { Eye, EyeOff, Workflow, ArrowLeft } from 'lucide-react';
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -43,15 +43,29 @@ const AuthPage = () => {
     }
   };
 
+  const handleBack = () => {
+    navigate('/');
+  };
+
   return (
     <div className="min-h-screen bg-white flex items-center justify-center p-4">
       <Card className="w-full max-w-md neo-card">
         <CardHeader className="text-center">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <div className="w-10 h-10 bg-purple-accent rounded-lg flex items-center justify-center">
-              <Workflow className="w-6 h-6 text-white" />
+          <div className="flex items-center justify-between mb-4">
+            <Button
+              variant="ghost"
+              onClick={handleBack}
+              className="neo-brutal bg-white hover:bg-gray-100 text-black font-bold p-2"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-10 bg-purple-accent rounded-lg flex items-center justify-center">
+                <Workflow className="w-6 h-6 text-white" />
+              </div>
+              <span className="text-2xl font-bold">VisualFlow</span>
             </div>
-            <span className="text-2xl font-bold">VisualFlow</span>
+            <div className="w-9"></div>
           </div>
           <CardTitle className="text-xl">
             {isLogin ? 'Welcome Back' : 'Create Account'}

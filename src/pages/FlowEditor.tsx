@@ -38,6 +38,7 @@ const FlowEditor = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
   // Convert todos to flow nodes
   const todosToNodes = (todoList: any[]): Node[] => {
@@ -73,15 +74,16 @@ const FlowEditor = () => {
     loadTodos();
   }, []);
 
-  // Auto-save when nodes or edges change
+  // Auto-save functionality - triggers when nodes or edges change
   useEffect(() => {
     if (!isLoading && nodes.length > 0) {
-      const timeoutId = setTimeout(() => {
-        saveFlow(true); // Silent save
-      }, 2000);
+      const timeoutId = setTimeout(async () => {
+        await saveFlow(true); // Silent auto-save
+      }, 2000); // Auto-save after 2 seconds of inactivity
+      
       return () => clearTimeout(timeoutId);
     }
-  }, [nodes, edges, isLoading]);
+  }, [nodes, edges, flowName, isLoading]);
 
   // Update todo without changing node position
   const handleTodoUpdate = async (todoId: number, updates: any) => {
@@ -173,6 +175,7 @@ const FlowEditor = () => {
         name: flowName,
         flow_data: { nodes, edges }
       });
+      setLastSaved(new Date());
       if (!silent) {
         toast.success('Flow saved successfully');
       }
@@ -199,11 +202,18 @@ const FlowEditor = () => {
       {/* Header */}
       <div className="bg-white border-b-2 border-black p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
-          <Input
-            value={flowName}
-            onChange={(e) => setFlowName(e.target.value)}
-            className="w-full sm:w-64 neo-brutal text-sm sm:text-base"
-          />
+          <div className="flex flex-col gap-1">
+            <Input
+              value={flowName}
+              onChange={(e) => setFlowName(e.target.value)}
+              className="w-full sm:w-64 neo-brutal text-sm sm:text-base"
+            />
+            {lastSaved && (
+              <span className="text-xs text-gray-600">
+                Auto-saved at {lastSaved.toLocaleTimeString()}
+              </span>
+            )}
+          </div>
           <div className="flex flex-wrap gap-2 sm:gap-3">
             <Button 
               onClick={addNewTodo} 
@@ -235,7 +245,7 @@ const FlowEditor = () => {
             className="neo-brutal-purple bg-purple-accent hover:bg-purple-accent text-white font-bold text-xs sm:text-sm px-3 sm:px-4 py-2 flex-1 sm:flex-none"
           >
             <Save size={14} className="mr-1 sm:mr-2" />
-            {isSaving ? 'Saving...' : 'Save Flow'}
+            {isSaving ? 'Saving...' : 'Save Now'}
           </Button>
         </div>
       </div>
