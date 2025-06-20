@@ -500,24 +500,24 @@ const FlowEditor = () => {
       if (!flowLoaded) {
         console.log('⏭️ No saved flow found, loading todos...');
         // If no saved flow, load todos and create default nodes
-        const todoData = await todoService.getAllTodos();
+      const todoData = await todoService.getAllTodos();
         console.log('📊 Loaded todos:', todoData.length);
-        setTodos(todoData as any);
-        const todoNodes = todosToNodes(todoData as any);
+      setTodos(todoData as any);
+      const todoNodes = todosToNodes(todoData as any);
         console.log('📊 Created todo nodes:', todoNodes.length);
-        setNodes(todoNodes);
-        
+      setNodes(todoNodes);
+      
         // Initialize history with current state (preserve position)
-        const initialHistoryState: HistoryState = {
-          nodes: todoNodes.map(node => ({
+      const initialHistoryState: HistoryState = {
+        nodes: todoNodes.map(node => ({
             ...node,
             type: node.type || 'todo', // ensure type is present
-          })),
-          edges: []
-        };
-        
-        setHistory([initialHistoryState]);
-        setHistoryIndex(0);
+        })),
+        edges: []
+      };
+      
+      setHistory([initialHistoryState]);
+      setHistoryIndex(0);
         console.log('✅ History initialized with todos:', initialHistoryState);
       } else {
         console.log('✅ Flow loaded successfully, skipping todo initialization');
@@ -695,7 +695,7 @@ const FlowEditor = () => {
   const refreshTodos = async () => {
     try {
       const todoData = await todoService.getAllTodos();
-      setTodos(todoData as any);
+    setTodos(todoData as any);
       setNodes((currentNodes) =>
         currentNodes.map((node) => {
           if (node.type === 'todo') {
@@ -733,10 +733,10 @@ const FlowEditor = () => {
         console.log('✅ Manual save: Updated existing flow with ID:', currentFlowId);
       } else {
         // Create new flow
-        await flowService.saveFlow({
-          name: flowName,
-          flow_data: { nodes, edges }
-        });
+      await flowService.saveFlow({
+        name: flowName,
+        flow_data: { nodes, edges }
+      });
         // Get the flow ID from the result
         const savedFlow = await flowService.getMostRecentFlow();
         if (savedFlow) {
