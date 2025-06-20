@@ -24,14 +24,12 @@ import { useStore } from '@/stores/useStore';
 import TodoNode from '@/components/flow/TodoNode';
 import ShareDialog from '@/components/flow/ShareDialog';
 import { toast } from 'sonner';
-import { useAuth } from '@/contexts/AuthContext';
 
 const nodeTypes = {
   todo: TodoNode,
 };
 
 const FlowEditor = () => {
-  const { user } = useAuth();
   const { todos, setTodos } = useStore();
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -47,7 +45,6 @@ const FlowEditor = () => {
       // Try to find saved position for this todo
       const savedNode = savedFlow?.nodes?.find((node: any) => node.id === `todo-${todo.id}`);
       const defaultPosition = { x: 250 + (index % 3) * 300, y: 100 + Math.floor(index / 3) * 150 };
-      
       return {
         id: `todo-${todo.id}`,
         type: 'todo',
@@ -61,24 +58,20 @@ const FlowEditor = () => {
     });
   };
 
-  // Load todos and flow data
+  // Load todos and convert to nodes
   const loadTodos = async () => {
     try {
       await initDatabase();
       const todoData = await todoService.getAllTodos();
       setTodos(todoData as any);
-      
       // Try to load the most recently saved flow (better persistence)
       const savedFlow = await flowService.getMostRecentFlow();
-
       // If a saved flow exists, use its name as the current flow name
       if (savedFlow) {
         setFlowName(savedFlow.name);
       }
-      
       const todoNodes = todosToNodes(todoData as any, savedFlow?.flow_data);
       setNodes(todoNodes);
-      
       // Load saved edges if available
       if (savedFlow?.flow_data?.edges) {
         setEdges(savedFlow.flow_data.edges);
@@ -167,11 +160,6 @@ const FlowEditor = () => {
   );
 
   const addNewTodo = async () => {
-    if (!user) {
-      toast.error('Please sign in to add new todos');
-      return;
-    }
-    
     try {
       const newTodo = {
         title: `New Task ${todos.length + 1}`,
@@ -243,9 +231,7 @@ const FlowEditor = () => {
           <div className="flex flex-wrap gap-2 sm:gap-3">
             <Button 
               onClick={addNewTodo} 
-              disabled={!user}
-              className="neo-brutal-pink bg-pink-accent hover:bg-pink-accent text-white font-bold text-xs sm:text-sm px-3 sm:px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              title={!user ? "Please sign in to add todos" : "Add new todo"}
+              className="neo-brutal-pink bg-pink-accent hover:bg-pink-accent text-white font-bold text-xs sm:text-sm px-3 sm:px-4 py-2"
             >
               <Plus size={14} className="mr-1 sm:mr-2" />
               Add Todo
