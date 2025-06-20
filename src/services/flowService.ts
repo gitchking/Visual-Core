@@ -19,34 +19,12 @@ export const flowService = {
 
   async saveFlow(flow: { name: string; flow_data: any }) {
     const db = getDatabase();
-    
-    // Check if a flow with this name already exists
-    const existingStmt = db.prepare('SELECT id FROM flows WHERE name = ?');
-    existingStmt.bind([flow.name]);
-    
-    if (existingStmt.step()) {
-      // Update existing flow
-      const existingFlow = existingStmt.getAsObject();
-      existingStmt.free();
-      
-      const updateStmt = db.prepare(`
-        UPDATE flows SET flow_data = ?, updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-      `);
-      updateStmt.run([JSON.stringify(flow.flow_data), existingFlow.id]);
-      updateStmt.free();
-    } else {
-      // Create new flow
-      existingStmt.free();
-      
-      const insertStmt = db.prepare(`
-        INSERT INTO flows (name, flow_data, user_id)
-        VALUES (?, ?, 1)
-      `);
-      insertStmt.run([flow.name, JSON.stringify(flow.flow_data)]);
-      insertStmt.free();
-    }
-    
+    const stmt = db.prepare(`
+      INSERT INTO flows (name, flow_data, user_id)
+      VALUES (?, ?, 1)
+    `);
+    stmt.run([flow.name, JSON.stringify(flow.flow_data)]);
+    stmt.free();
     saveDatabase();
   },
 
@@ -64,7 +42,6 @@ export const flowService = {
       values.push(JSON.stringify(updates.flow_data));
     }
 
-    setParts.push('updated_at = CURRENT_TIMESTAMP');
     values.push(id);
     
     const stmt = db.prepare(`UPDATE flows SET ${setParts.join(', ')} WHERE id = ?`);

@@ -25,14 +25,12 @@ import { useStore } from '@/stores/useStore';
 import TodoNode from '@/components/flow/TodoNode';
 import ShareDialog from '@/components/flow/ShareDialog';
 import { toast } from 'sonner';
-import { useAuth } from '@/contexts/AuthContext';
 
 const nodeTypes = {
   todo: TodoNode,
 };
 
 const FlowEditor = () => {
-  const { user } = useAuth();
   const { todos, setTodos } = useStore();
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -42,44 +40,28 @@ const FlowEditor = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
-  // Convert todos to flow nodes with saved positions
-  const todosToNodes = (todoList: any[], savedFlow?: any): Node[] => {
-    return todoList.map((todo, index) => {
-      // Try to find saved position for this todo
-      const savedNode = savedFlow?.nodes?.find((node: any) => node.id === `todo-${todo.id}`);
-      const defaultPosition = { x: 250 + (index % 3) * 300, y: 100 + Math.floor(index / 3) * 150 };
-      
-      return {
-        id: `todo-${todo.id}`,
-        type: 'todo',
-        position: savedNode?.position || defaultPosition,
-        data: {
-          todo,
-          onUpdate: handleTodoUpdate,
-          onDelete: handleTodoDelete,
-        },
-      };
-    });
+  // Convert todos to flow nodes
+  const todosToNodes = (todoList: any[]): Node[] => {
+    return todoList.map((todo, index) => ({
+      id: `todo-${todo.id}`,
+      type: 'todo',
+      position: { x: 250 + (index % 3) * 300, y: 100 + Math.floor(index / 3) * 150 },
+      data: {
+        todo,
+        onUpdate: handleTodoUpdate,
+        onDelete: handleTodoDelete,
+      },
+    }));
   };
 
-  // Load todos and flow data
+  // Load todos and convert to nodes
   const loadTodos = async () => {
     try {
       await initDatabase();
       const todoData = await todoService.getAllTodos();
       setTodos(todoData as any);
-      
-      // Try to load saved flow data
-      const flows = await flowService.getAllFlows();
-      const savedFlow = flows.find((flow: any) => flow.name === flowName);
-      
-      const todoNodes = todosToNodes(todoData as any, savedFlow?.flow_data);
+      const todoNodes = todosToNodes(todoData as any);
       setNodes(todoNodes);
-      
-      // Load saved edges if available
-      if (savedFlow?.flow_data?.edges) {
-        setEdges(savedFlow.flow_data.edges);
-      }
     } catch (error) {
       console.error('Failed to load todos:', error);
       toast.error('Failed to load todos');
@@ -164,11 +146,6 @@ const FlowEditor = () => {
   );
 
   const addNewTodo = async () => {
-    if (!user) {
-      toast.error('Please sign in to add new todos');
-      return;
-    }
-    
     try {
       const newTodo = {
         title: `New Task ${todos.length + 1}`,
@@ -240,9 +217,7 @@ const FlowEditor = () => {
           <div className="flex flex-wrap gap-2 sm:gap-3">
             <Button 
               onClick={addNewTodo} 
-              disabled={!user}
-              className="neo-brutal-pink bg-pink-accent hover:bg-pink-accent text-white font-bold text-xs sm:text-sm px-3 sm:px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              title={!user ? "Please sign in to add todos" : "Add new todo"}
+              className="neo-brutal-pink bg-pink-accent hover:bg-pink-accent text-white font-bold text-xs sm:text-sm px-3 sm:px-4 py-2"
             >
               <Plus size={14} className="mr-1 sm:mr-2" />
               Add Todo
