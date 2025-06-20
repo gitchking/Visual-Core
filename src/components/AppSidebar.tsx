@@ -13,6 +13,7 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from '@/components/ui/sidebar';
+import { Button } from '@/components/ui/button';
 import { 
   Home, 
   CheckSquare, 
@@ -20,8 +21,10 @@ import {
   BarChart3, 
   Users, 
   Megaphone,
-  Settings
+  Settings,
+  LogOut
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const navigationItems = [
   {
@@ -58,6 +61,15 @@ const navigationItems = [
 
 const AppSidebar = () => {
   const location = useLocation();
+  const { signOut, user } = useAuth();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
+  };
 
   return (
     <Sidebar className="bg-white border-r border-black">
@@ -118,8 +130,24 @@ const AppSidebar = () => {
         </SidebarGroup>
       </SidebarContent>
       
-      <SidebarFooter className="bg-white border-t border-black">
-        <div className="px-4 py-2 text-xs text-gray-600">
+      <SidebarFooter className="bg-white border-t border-black p-4">
+        {user && (
+          <div className="space-y-2">
+            <div className="text-xs text-gray-600 truncate">
+              {user.email}
+            </div>
+            <Button
+              onClick={handleSignOut}
+              variant="outline"
+              size="sm"
+              className="w-full text-xs neo-brutal"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Sign Out
+            </Button>
+          </div>
+        )}
+        <div className="text-xs text-gray-600 mt-2">
           © 2024 VisualFlow WebApp
         </div>
       </SidebarFooter>

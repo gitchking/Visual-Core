@@ -24,6 +24,7 @@ import { initDatabase } from '@/lib/database';
 import { useStore } from '@/stores/useStore';
 import TodoNode from '@/components/flow/TodoNode';
 import ShareDialog from '@/components/flow/ShareDialog';
+import { toast } from 'sonner';
 
 const nodeTypes = {
   todo: TodoNode,
@@ -36,6 +37,7 @@ const FlowEditor = () => {
   const [flowName, setFlowName] = useState('Todo Flow');
   const [isLoading, setIsLoading] = useState(true);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Convert todos to flow nodes
   const todosToNodes = (todoList: any[]): Node[] => {
@@ -61,6 +63,7 @@ const FlowEditor = () => {
       setNodes(todoNodes);
     } catch (error) {
       console.error('Failed to load todos:', error);
+      toast.error('Failed to load todos');
     } finally {
       setIsLoading(false);
     }
@@ -69,6 +72,16 @@ const FlowEditor = () => {
   useEffect(() => {
     loadTodos();
   }, []);
+
+  // Auto-save when nodes or edges change
+  useEffect(() => {
+    if (!isLoading && nodes.length > 0) {
+      const timeoutId = setTimeout(() => {
+        saveFlow(true); // Silent save
+      }, 2000);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [nodes, edges, isLoading]);
 
   // Update todo without changing node position
   const handleTodoUpdate = async (todoId: number, updates: any) => {
@@ -95,8 +108,11 @@ const FlowEditor = () => {
             : node
         )
       );
+      
+      toast.success('Todo updated successfully');
     } catch (error) {
       console.error('Failed to update todo:', error);
+      toast.error('Failed to update todo');
     }
   };
 
@@ -105,8 +121,10 @@ const FlowEditor = () => {
     try {
       await todoService.deleteTodo(todoId);
       await loadTodos(); // Reload to sync changes
+      toast.success('Todo deleted successfully');
     } catch (error) {
       console.error('Failed to delete todo:', error);
+      toast.error('Failed to delete todo');
     }
   };
 
@@ -134,24 +152,37 @@ const FlowEditor = () => {
       };
       await todoService.createTodo(newTodo);
       await loadTodos(); // Reload to show new todo
+      toast.success('New todo created');
     } catch (error) {
       console.error('Failed to create todo:', error);
+      toast.error('Failed to create todo');
     }
   };
 
   const refreshTodos = () => {
     loadTodos();
+    toast.success('Todos refreshed');
   };
 
-  const saveFlow = async () => {
+  const saveFlow = async (silent = false) => {
+    if (isSaving) return;
+    
+    setIsSaving(true);
     try {
       await flowService.saveFlow({
         name: flowName,
         flow_data: { nodes, edges }
       });
-      console.log('Flow saved successfully');
+      if (!silent) {
+        toast.success('Flow saved successfully');
+      }
     } catch (error) {
       console.error('Failed to save flow:', error);
+      if (!silent) {
+        toast.error('Failed to save flow');
+      }
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -199,11 +230,12 @@ const FlowEditor = () => {
             Share
           </Button>
           <Button 
-            onClick={saveFlow} 
+            onClick={() => saveFlow()} 
+            disabled={isSaving}
             className="neo-brutal-purple bg-purple-accent hover:bg-purple-accent text-white font-bold text-xs sm:text-sm px-3 sm:px-4 py-2 flex-1 sm:flex-none"
           >
             <Save size={14} className="mr-1 sm:mr-2" />
-            Save Flow
+            {isSaving ? 'Saving...' : 'Save Flow'}
           </Button>
         </div>
       </div>
