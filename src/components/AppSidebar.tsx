@@ -22,7 +22,8 @@ import {
   Users, 
   Megaphone,
   Settings,
-  LogOut
+  LogOut,
+  LogIn
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -131,7 +132,7 @@ const AppSidebar = () => {
       </SidebarContent>
       
       <SidebarFooter className="bg-white border-t border-black p-4">
-        {user && (
+        {user ? (
           <div className="space-y-2">
             <div className="text-xs text-gray-600 truncate">
               {user.email}
@@ -144,6 +145,23 @@ const AppSidebar = () => {
             >
               <LogOut className="w-4 h-4 mr-2" />
               Sign Out
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <div className="text-xs text-gray-600">
+              Guest Mode
+            </div>
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="w-full text-xs neo-brutal"
+            >
+              <Link to="/auth">
+                <LogIn className="w-4 h-4 mr-2" />
+                Sign In
+              </Link>
             </Button>
           </div>
         )}
