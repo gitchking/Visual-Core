@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,17 +10,24 @@ import { useStore } from '@/stores/useStore';
 const TodoPage = () => {
   const { todos, setTodos, addTodo, updateTodo, deleteTodo } = useStore();
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [newTodo, setNewTodo] = useState({ title: '', description: '', priority: 'medium' });
   const [editingId, setEditingId] = useState<number | null>(null);
 
   useEffect(() => {
     const loadTodos = async () => {
       try {
+        setError(null);
+        setIsLoading(true);
+        console.log('Initializing database...');
         await initDatabase();
+        console.log('Loading todos...');
         const todoData = await todoService.getAllTodos();
+        console.log('Todos loaded successfully:', todoData);
         setTodos(todoData as any);
       } catch (error) {
         console.error('Failed to load todos:', error);
+        setError(error instanceof Error ? error.message : 'Failed to load todos');
       } finally {
         setIsLoading(false);
       }
@@ -68,6 +74,14 @@ const TodoPage = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-lg text-black">Loading todos...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="text-lg text-red-500">Error: {error}</div>
       </div>
     );
   }

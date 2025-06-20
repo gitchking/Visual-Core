@@ -2,14 +2,30 @@ import { getDatabase, saveDatabase } from '@/lib/database';
 
 export const todoService = {
   async getAllTodos() {
-    const db = getDatabase();
-    const stmt = db.prepare('SELECT * FROM todos ORDER BY created_at DESC');
-    const todos = [];
-    while (stmt.step()) {
-      todos.push(stmt.getAsObject());
+    try {
+      console.log('Getting database instance...');
+      const db = getDatabase();
+      if (!db) {
+        console.error('Database instance is null');
+        throw new Error('Database not initialized');
+      }
+      
+      console.log('Preparing SQL statement...');
+      const stmt = db.prepare('SELECT * FROM todos ORDER BY created_at DESC');
+      const todos = [];
+      
+      console.log('Executing SQL statement...');
+      while (stmt.step()) {
+        todos.push(stmt.getAsObject());
+      }
+      stmt.free();
+      
+      console.log('Successfully retrieved todos:', todos);
+      return todos;
+    } catch (error) {
+      console.error('Error in getAllTodos:', error);
+      throw error;
     }
-    stmt.free();
-    return todos;
   },
 
   async getTodoById(id: number) {

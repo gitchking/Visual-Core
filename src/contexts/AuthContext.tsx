@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { auth as localAuth } from '@/lib/localAuth';
+// Removed import of '@supabase/supabase-js' to fix module not found error
 
 interface User {
   id: string;
@@ -174,3 +175,5 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     </AuthContext.Provider>
   );
 };
+
+export {};

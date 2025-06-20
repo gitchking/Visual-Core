@@ -4,36 +4,50 @@ let SQL: any = null;
 let db: any = null;
 
 export const initDatabase = async () => {
-  console.log('Initializing database...');
-  if (!SQL) {
-    console.log('Loading SQL.js...');
-    SQL = await initSqlJs({
-      locateFile: (file: string) => `https://sql.js.org/dist/${file}`
-    });
-    console.log('SQL.js loaded');
-  }
-
-  if (!db) {
-    console.log('Setting up database...');
-    // Try to load existing database from localStorage
-    const savedDb = localStorage.getItem('visualflow-db');
-    if (savedDb) {
-      console.log('Loading existing database from localStorage...');
-      const uint8Array = new Uint8Array(JSON.parse(savedDb));
-      db = new SQL.Database(uint8Array);
-      // Check if migration is needed
-      await checkAndMigrateDatabase();
-      console.log('Existing database loaded and migrated');
-    } else {
-      console.log('Creating new database...');
-      db = new SQL.Database();
-      await initializeTables();
-      console.log('New database created');
+  try {
+    console.log('Initializing database...');
+    if (!SQL) {
+      console.log('Loading SQL.js...');
+      SQL = await initSqlJs({
+        locateFile: (file: string) => `https://sql.js.org/dist/${file}`
+      });
+      console.log('SQL.js loaded successfully');
     }
-  }
 
-  console.log('Database ready');
-  return db;
+    if (!db) {
+      console.log('Setting up database...');
+      // Try to load existing database from localStorage
+      const savedDb = localStorage.getItem('visualflow-db');
+      if (savedDb) {
+        console.log('Loading existing database from localStorage...');
+        try {
+          const uint8Array = new Uint8Array(JSON.parse(savedDb));
+          db = new SQL.Database(uint8Array);
+          console.log('Successfully loaded database from localStorage');
+          // Check if migration is needed
+          await checkAndMigrateDatabase();
+          console.log('Database migration completed successfully');
+        } catch (error) {
+          console.error('Error loading database from localStorage:', error);
+          console.log('Creating new database instead...');
+          db = new SQL.Database();
+          await initializeTables();
+          console.log('New database created successfully');
+        }
+      } else {
+        console.log('No existing database found, creating new one...');
+        db = new SQL.Database();
+        await initializeTables();
+        console.log('New database created successfully');
+      }
+    }
+
+    console.log('Database initialization completed successfully');
+    return db;
+  } catch (error) {
+    console.error('Error during database initialization:', error);
+    throw error;
+  }
 };
 
 const checkAndMigrateDatabase = async () => {
