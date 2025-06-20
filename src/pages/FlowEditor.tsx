@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   ReactFlow,
   MiniMap,
@@ -12,538 +13,46 @@ import {
   Node,
   BackgroundVariant,
   ConnectionMode,
-  BaseEdge,
-  EdgeProps,
-  getBezierPath,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Save, Plus, RefreshCw, Share, Undo2, Redo2 } from 'lucide-react';
+import { Save, Plus, RefreshCw, Share } from 'lucide-react';
 import { flowService } from '@/services/flowService';
 import { todoService } from '@/services/todoService';
-import { initDatabase, getDatabase } from '@/lib/database';
+import { initDatabase } from '@/lib/database';
 import { useStore } from '@/stores/useStore';
 import TodoNode from '@/components/flow/TodoNode';
 import ShareDialog from '@/components/flow/ShareDialog';
-
-// Custom edge component for a curvy black line
-const CurvyBlackEdge: React.FC<EdgeProps> = ({
-  id,
-  sourceX,
-  sourceY,
-  targetX,
-  targetY,
-  sourcePosition,
-  targetPosition,
-  style = {},
-  markerEnd,
-}) => {
-  const [edgePath, labelX, labelY] = getBezierPath({
-    sourceX,
-    sourceY,
-    sourcePosition,
-    targetX,
-    targetY,
-    targetPosition,
-  });
-
-  return (
-    <>
-      <BaseEdge
-        path={edgePath}
-        markerEnd={markerEnd}
-        style={{
-          ...style,
-          stroke: '#000',
-          strokeWidth: 3,
-          strokeDasharray: 'none',
-        }}
-      />
-    </>
-  );
-};
+import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 const nodeTypes = {
   todo: TodoNode,
 };
 
-const edgeTypes = {
-  curvy: CurvyBlackEdge,
-};
-
-// History management for undo/redo
-interface HistoryNode {
-  id: string;
-  type: string;
-  data: Record<string, unknown>;
-}
-
-interface ConnectionAction {
-  type: 'add' | 'remove';
-  edge: Edge;
-}
-
-interface HistoryState {
-  nodes: HistoryNode[];
-  edges: Edge[];
-  lastConnectionAction?: ConnectionAction;
-}
-
 const FlowEditor = () => {
+  const { user } = useAuth();
   const { todos, setTodos } = useStore();
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [flowName, setFlowName] = useState('Todo Flow');
   const [isLoading, setIsLoading] = useState(true);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
-  const [currentFlowId, setCurrentFlowId] = useState<number | null>(null);
-  
-  // Undo/Redo functionality
-  const [history, setHistory] = useState<HistoryState[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
-  const isUndoRedoAction = useRef(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
-  // Auto-save functionality
-  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Comprehensive debugging function
-  const runComprehensiveTest = async () => {
-    try {
-      console.log('🔍 === COMPREHENSIVE DEBUGGING START ===');
-      
-      // 1. Check localStorage
-      console.log('📦 === STORAGE CHECK ===');
-      const visualflowDb = localStorage.getItem('visualflow-db');
-      console.log('LocalStorage visualflow-db exists:', !!visualflowDb);
-      console.log('LocalStorage visualflow-db size:', visualflowDb?.length || 0);
-      
-      // 2. Check database connection
-      console.log('🗄️ === DATABASE CHECK ===');
-      const db = getDatabase();
-      console.log('Database object exists:', !!db);
-      
-      // 3. Check flows table
-      console.log('📋 === FLOWS TABLE CHECK ===');
-      try {
-        const stmt = db.prepare('SELECT COUNT(*) as count FROM flows');
-        stmt.run();
-        const result = stmt.getAsObject();
-        stmt.free();
-        console.log('Flows table count:', result.count);
-        
-        // Check all flows
-        const allFlows = await flowService.getAllFlows();
-        console.log('All flows in database:', allFlows.length);
-        allFlows.forEach((flow, index) => {
-          console.log(`Flow ${index + 1}:`, {
-            id: flow.id,
-            name: flow.name,
-            nodes: flow.flow_data?.nodes?.length || 0,
-            edges: flow.flow_data?.edges?.length || 0,
-            created_at: flow.created_at
-          });
-        });
-      } catch (error) {
-        console.error('❌ Error checking flows table:', error);
-      }
-      
-      // 4. Test save functionality
-      console.log('💾 === SAVE FUNCTIONALITY TEST ===');
-      const testFlow = {
-        name: 'Debug Test Flow',
-        flow_data: {
-          nodes: [
-            {
-              id: 'debug-test-node-1',
-              type: 'todo',
-              position: { x: 200, y: 200 },
-              data: { test: true, debug: true }
-            }
-          ],
-          edges: []
-        }
-      };
-      
-      console.log('Saving test flow...');
-      await flowService.saveFlow(testFlow);
-      console.log('✅ Test flow saved');
-      
-      // 5. Test load functionality
-      console.log('📥 === LOAD FUNCTIONALITY TEST ===');
-      const loadedFlow = await flowService.getMostRecentFlow();
-      console.log('Loaded test flow:', loadedFlow);
-      console.log('Test flow nodes:', loadedFlow?.flow_data?.nodes);
-      console.log('Test flow node positions:', loadedFlow?.flow_data?.nodes?.[0]?.position);
-      
-      // 6. Check current state
-      console.log('📊 === CURRENT STATE CHECK ===');
-      console.log('Current nodes:', nodes);
-      console.log('Current edges:', edges);
-      console.log('Current flow ID:', currentFlowId);
-      console.log('Current flow name:', flowName);
-      
-      console.log('🔍 === COMPREHENSIVE DEBUGGING END ===');
-      
-    } catch (error) {
-      console.error('❌ Comprehensive test failed:', error);
-    }
-  };
-
-  // Auto-save function
-  const autoSave = useCallback(async () => {
-    if (nodes.length > 0 || edges.length > 0) {
-      try {
-        console.log('🔄 Auto-saving flow...', { nodes: nodes.length, edges: edges.length, flowName, currentFlowId });
-        console.log('📊 Sample node data:', nodes[0]);
-        
-        if (currentFlowId) {
-          // Update existing flow
-          await flowService.updateFlow(currentFlowId, {
-            name: flowName,
-            flow_data: { nodes, edges }
-          });
-          console.log('✅ Updated existing flow with ID:', currentFlowId);
-        } else {
-          // Create new flow
-          await flowService.saveFlow({
-            name: flowName,
-            flow_data: { nodes, edges }
-          });
-          // Get the flow ID from the result
-          const savedFlow = await flowService.getMostRecentFlow();
-          if (savedFlow) {
-            setCurrentFlowId(savedFlow.id);
-            console.log('✅ Created new flow with ID:', savedFlow.id);
-          }
-        }
-        console.log('✅ Flow auto-saved successfully');
-      } catch (error) {
-        console.error('❌ Failed to auto-save flow:', error);
-      }
-    } else {
-      console.log('⏭️ Skipping auto-save - no nodes or edges');
-    }
-  }, [nodes, edges, flowName, currentFlowId]);
-
-  // Debounced auto-save
-  const debouncedAutoSave = useCallback(() => {
-    if (autoSaveTimeoutRef.current) {
-      clearTimeout(autoSaveTimeoutRef.current);
-    }
-    autoSaveTimeoutRef.current = setTimeout(autoSave, 2000); // Auto-save after 2 seconds of inactivity
-  }, [autoSave]);
-
-  // Save current state to history - only content, not positions
-  const saveToHistory = useCallback((newNodes: Node[], newEdges: Edge[], connectionAction?: ConnectionAction) => {
-    if (isUndoRedoAction.current) {
-      isUndoRedoAction.current = false;
-      return;
-    }
-
-    // Create history state with only content data (no positions)
-    const contentOnlyNodes = newNodes.map(node => ({
-      id: node.id,
-      type: node.type,
-      data: node.data,
-      // Exclude position from history
-    }));
-
-    const newState = { 
-      nodes: contentOnlyNodes, 
-      edges: newEdges,
-      lastConnectionAction: connectionAction
-    };
-    
-    console.log('Saving to history:', newState, 'current index:', historyIndex);
-    
-    setHistory(prev => {
-      // Remove any future history if we're not at the end
-      const newHistory = prev.slice(0, historyIndex + 1);
-      newHistory.push(newState);
-      // Keep unlimited history - remove the 50 state limit
-      console.log('New history length:', newHistory.length);
-      return newHistory;
-    });
-    setHistoryIndex(prev => {
-      const newIndex = prev + 1;
-      console.log('New history index:', newIndex);
-      return newIndex;
-    });
-  }, [historyIndex]);
-
-  // Undo function - handles individual connection actions
-  const undo = useCallback(() => {
-    console.log('Undo function called, historyIndex:', historyIndex, 'history length:', history.length);
-    
-    if (historyIndex > 0) {
-      isUndoRedoAction.current = true;
-      const newIndex = historyIndex - 1;
-      const currentState = history[historyIndex];
-      const previousState = history[newIndex];
-      
-      console.log('Current state:', currentState);
-      console.log('Previous state:', previousState);
-      
-      if (currentState.lastConnectionAction?.type === 'add') {
-        // Undo connection addition - remove the specific edge
-        const edgeToRemove = currentState.lastConnectionAction.edge;
-        console.log('Undoing connection addition:', edgeToRemove);
-        setEdges(eds => eds.filter(edge => edge.id !== edgeToRemove.id));
-      } else if (currentState.lastConnectionAction?.type === 'remove') {
-        // Undo connection removal - add back the specific edge
-        const edgeToRestore = currentState.lastConnectionAction.edge;
-        console.log('Undoing connection removal:', edgeToRestore);
-        setEdges(eds => [...eds, edgeToRestore]);
-      } else {
-        // Regular content undo
-        console.log('Undoing content changes');
-        const restoredNodes = previousState.nodes.map(historyNode => {
-          const currentNode = nodes.find(n => n.id === historyNode.id);
-          return {
-            ...historyNode,
-            position: currentNode?.position || { x: 0, y: 0 },
-            sourcePosition: currentNode?.sourcePosition,
-            targetPosition: currentNode?.targetPosition,
-          } as Node;
-        });
-        
-        setNodes(restoredNodes);
-        setEdges(previousState.edges);
-      }
-      
-      setHistoryIndex(newIndex);
-      console.log('History index updated to:', newIndex);
-    } else {
-      console.log('Cannot undo - history index is 0 or less');
-    }
-  }, [historyIndex, history, setNodes, setEdges, nodes]);
-
-  // Redo function - handles individual connection actions
-  const redo = useCallback(() => {
-    console.log('Redo function called, historyIndex:', historyIndex, 'history length:', history.length);
-    
-    if (historyIndex < history.length - 1) {
-      isUndoRedoAction.current = true;
-      const newIndex = historyIndex + 1;
-      const nextState = history[newIndex];
-      
-      console.log('Next state:', nextState);
-      
-      if (nextState.lastConnectionAction?.type === 'add') {
-        // Redo connection addition - add the specific edge
-        const edgeToAdd = nextState.lastConnectionAction.edge;
-        console.log('Redoing connection addition:', edgeToAdd);
-        setEdges(eds => [...eds, edgeToAdd]);
-      } else if (nextState.lastConnectionAction?.type === 'remove') {
-        // Redo connection removal - remove the specific edge
-        const edgeToRemove = nextState.lastConnectionAction.edge;
-        console.log('Redoing connection removal:', edgeToRemove);
-        setEdges(eds => eds.filter(edge => edge.id !== edgeToRemove.id));
-      } else {
-        // Regular content redo
-        console.log('Redoing content changes');
-        const restoredNodes = nextState.nodes.map(historyNode => {
-          const currentNode = nodes.find(n => n.id === historyNode.id);
-          return {
-            ...historyNode,
-            position: currentNode?.position || { x: 0, y: 0 },
-            sourcePosition: currentNode?.sourcePosition,
-            targetPosition: currentNode?.targetPosition,
-          } as Node;
-        });
-        
-        setNodes(restoredNodes);
-        setEdges(nextState.edges);
-      }
-      
-      setHistoryIndex(newIndex);
-      console.log('History index updated to:', newIndex);
-    } else {
-      console.log('Cannot redo - already at latest state');
-    }
-  }, [historyIndex, history, setNodes, setEdges, nodes]);
-
-  // Enhanced node change handler with history - only for content changes
-  const handleNodesChange = useCallback((changes: any) => {
-    onNodesChange(changes);
-    
-    // Only save to history for content changes, not position changes
-    const hasContentChanges = changes.some((change: any) => 
-      change.type === 'replace' || 
-      (change.type === 'select' && change.selected !== undefined)
-    );
-    
-    if (hasContentChanges) {
-      setTimeout(() => {
-        if (!isUndoRedoAction.current) {
-          saveToHistory(nodes, edges);
-          debouncedAutoSave();
-        }
-      }, 100);
-    }
-  }, [onNodesChange, nodes, edges, saveToHistory, debouncedAutoSave]);
-
-  // Enhanced edge change handler with history
-  const handleEdgesChange = useCallback((changes: any) => {
-    onEdgesChange(changes);
-    
-    // Track individual connection removals
-    const removalChanges = changes.filter((change: any) => change.type === 'remove');
-    
-    if (removalChanges.length > 0) {
-      // Save each removal as individual action
-      removalChanges.forEach((change: any) => {
-        const connectionAction: ConnectionAction = {
-          type: 'remove',
-          edge: change.item
-        };
-        
-        setTimeout(() => {
-          if (!isUndoRedoAction.current) {
-            saveToHistory(nodes, edges, connectionAction);
-            debouncedAutoSave();
-          }
-        }, 100);
-      });
-    } else {
-      // Regular edge changes (not removals)
-      setTimeout(() => {
-        if (!isUndoRedoAction.current) {
-          saveToHistory(nodes, edges);
-          debouncedAutoSave();
-        }
-      }, 100);
-    }
-  }, [onEdgesChange, nodes, edges, saveToHistory, debouncedAutoSave]);
-
-  // Load saved flow data
-  const loadSavedFlow = async () => {
-    try {
-      console.log('🔄 Attempting to load saved flow...');
-      const savedFlow = await flowService.getMostRecentFlow();
-      console.log('📊 Retrieved saved flow:', savedFlow);
-      
-      if (savedFlow && savedFlow.flow_data) {
-        setFlowName(savedFlow.name);
-        setCurrentFlowId(savedFlow.id);
-        
-        // Load saved nodes and edges
-        const savedNodes = savedFlow.flow_data.nodes || [];
-        const savedEdges = savedFlow.flow_data.edges || [];
-        
-        console.log('📊 Loaded saved nodes:', savedNodes.length, 'edges:', savedEdges.length);
-        console.log('📊 Sample saved node:', savedNodes[0]);
-        
-        // Restore todo data for each node, but keep their position as is
-        const nodesWithTodoData = await Promise.all(
-          savedNodes.map(async (node: any) => {
-            if (node.type === 'todo') {
-              // Extract todo ID from node ID
-              const todoId = parseInt(node.id.replace('todo-', ''));
-              const todo = await todoService.getTodoById(todoId);
-              if (todo) {
-                return {
-                  ...node, // keep position and all properties
-                  data: {
-                    todo,
-                    onUpdate: handleTodoUpdate,
-                    onDelete: handleTodoDelete,
-                  }
-                };
-              }
-            }
-            return node;
-          })
-        );
-        
-        console.log('✅ Setting nodes with positions:', nodesWithTodoData.length);
-        setNodes(nodesWithTodoData);
-        setEdges(savedEdges);
-        
-        // Initialize history with loaded state (preserve position)
-        const initialHistoryState: HistoryState = {
-          nodes: nodesWithTodoData.map(node => ({
-            ...node,
-            type: node.type || 'todo', // ensure type is present
-          })),
-          edges: savedEdges
-        };
-        
-        setHistory([initialHistoryState]);
-        setHistoryIndex(0);
-        
-        console.log('✅ Loaded saved flow:', savedFlow.name);
-        return true;
-      } else {
-        console.log('⏭️ No saved flow found');
-        return false;
-      }
-    } catch (error) {
-      console.error('❌ Failed to load saved flow:', error);
-      return false;
-    }
-  };
-
-  // Load todos and convert to nodes
-  const loadTodos = async () => {
-    try {
-      console.log('🚀 Starting loadTodos...');
-      await initDatabase();
-      console.log('✅ Database initialized');
-      
-      // Try to load saved flow first
-      console.log('🔄 Attempting to load saved flow...');
-      const flowLoaded = await loadSavedFlow();
-      console.log('📊 Flow loaded result:', flowLoaded);
-      
-      if (!flowLoaded) {
-        console.log('⏭️ No saved flow found, loading todos...');
-        // If no saved flow, load todos and create default nodes
-      const todoData = await todoService.getAllTodos();
-        console.log('📊 Loaded todos:', todoData.length);
-      setTodos(todoData as any);
-      const todoNodes = todosToNodes(todoData as any);
-        console.log('📊 Created todo nodes:', todoNodes.length);
-      setNodes(todoNodes);
-      
-        // Initialize history with current state (preserve position)
-      const initialHistoryState: HistoryState = {
-        nodes: todoNodes.map(node => ({
-            ...node,
-            type: node.type || 'todo', // ensure type is present
-        })),
-        edges: []
-      };
-      
-      setHistory([initialHistoryState]);
-      setHistoryIndex(0);
-        console.log('✅ History initialized with todos:', initialHistoryState);
-      } else {
-        console.log('✅ Flow loaded successfully, skipping todo initialization');
-      }
-    } catch (error) {
-      console.error('❌ Failed to load todos:', error);
-    } finally {
-      setIsLoading(false);
-      console.log('🏁 Loading completed');
-    }
-  };
-
-  // Convert todos to flow nodes with position preservation
-  const todosToNodes = (todoList: any[]): Node[] => {
+  // Convert todos to flow nodes with saved positions
+  const todosToNodes = (todoList: any[], savedFlow?: any): Node[] => {
     return todoList.map((todo, index) => {
-      // Check if this node already exists to preserve its position
-      const existingNode = nodes.find(node => node.id === `todo-${todo.id}`);
-      const position = existingNode ? existingNode.position : { 
-        x: 250 + (index % 3) * 300, 
-        y: 100 + Math.floor(index / 3) * 150 
-      };
+      // Try to find saved position for this todo
+      const savedNode = savedFlow?.nodes?.find((node: any) => node.id === `todo-${todo.id}`);
+      const defaultPosition = { x: 250 + (index % 3) * 300, y: 100 + Math.floor(index / 3) * 150 };
       
       return {
         id: `todo-${todo.id}`,
         type: 'todo',
-        position,
+        position: savedNode?.position || defaultPosition,
         data: {
           todo,
           onUpdate: handleTodoUpdate,
@@ -553,21 +62,46 @@ const FlowEditor = () => {
     });
   };
 
+  // Load todos and flow data
+  const loadTodos = async () => {
+    try {
+      await initDatabase();
+      const todoData = await todoService.getAllTodos();
+      setTodos(todoData as any);
+      
+      // Try to load saved flow data
+      const flows = await flowService.getAllFlows();
+      const savedFlow = flows.find((flow: any) => flow.name === flowName);
+      
+      const todoNodes = todosToNodes(todoData as any, savedFlow?.flow_data);
+      setNodes(todoNodes);
+      
+      // Load saved edges if available
+      if (savedFlow?.flow_data?.edges) {
+        setEdges(savedFlow.flow_data.edges);
+      }
+    } catch (error) {
+      console.error('Failed to load todos:', error);
+      toast.error('Failed to load todos');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadTodos();
-    
-    // Run comprehensive test on load
-    runComprehensiveTest();
   }, []);
 
-  // Cleanup auto-save timeout on unmount
+  // Auto-save functionality - triggers when nodes or edges change
   useEffect(() => {
-    return () => {
-      if (autoSaveTimeoutRef.current) {
-        clearTimeout(autoSaveTimeoutRef.current);
-      }
-    };
-  }, []);
+    if (!isLoading && nodes.length > 0) {
+      const timeoutId = setTimeout(async () => {
+        await saveFlow(true); // Silent auto-save
+      }, 2000); // Auto-save after 2 seconds of inactivity
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [nodes, edges, flowName, isLoading]);
 
   // Update todo without changing node position
   const handleTodoUpdate = async (todoId: number, updates: any) => {
@@ -594,8 +128,11 @@ const FlowEditor = () => {
             : node
         )
       );
+      
+      toast.success('Todo updated successfully');
     } catch (error) {
       console.error('Failed to update todo:', error);
+      toast.error('Failed to update todo');
     }
   };
 
@@ -604,8 +141,10 @@ const FlowEditor = () => {
     try {
       await todoService.deleteTodo(todoId);
       await loadTodos(); // Reload to sync changes
+      toast.success('Todo deleted successfully');
     } catch (error) {
       console.error('Failed to delete todo:', error);
+      toast.error('Failed to delete todo');
     }
   };
 
@@ -613,54 +152,23 @@ const FlowEditor = () => {
     (params: Connection) => {
       // Ensure connection has both source and target
       if (params.source && params.target) {
-        // Prevent self-connections
-        if (params.source === params.target) {
-          return;
-        }
-        
-        // Allow multiple connections - only prevent exact duplicates
-        const existingEdge = edges.find(
-          edge => 
-            edge.source === params.source && 
-            edge.target === params.target &&
-            edge.sourceHandle === params.sourceHandle &&
-            edge.targetHandle === params.targetHandle
-        );
-        
-        if (existingEdge) {
-          return; // Only prevent exact duplicates
-        }
-        
-        const newEdge = {
+        setEdges((eds) => addEdge({
           ...params,
-          id: `edge-${params.source}-${params.sourceHandle || 'default'}-${params.target}-${params.targetHandle || 'default'}-${Date.now()}`,
-          type: 'curvy', // use the custom edge type
-          animated: false,
-        };
-        
-        // Track this as an individual connection action
-        const connectionAction: ConnectionAction = {
-          type: 'add',
-          edge: newEdge
-        };
-        
-        setEdges((eds) => {
-          const newEdges = addEdge(newEdge, eds);
-          // Save to history with connection action
-          setTimeout(() => {
-            if (!isUndoRedoAction.current) {
-              saveToHistory(nodes, newEdges, connectionAction);
-              debouncedAutoSave();
-            }
-          }, 100);
-          return newEdges;
-        });
+          id: `edge-${params.source}-${params.target}`,
+          type: 'smoothstep',
+          animated: true,
+        }, eds));
       }
     },
-    [setEdges, edges, nodes, saveToHistory, debouncedAutoSave],
+    [setEdges],
   );
 
   const addNewTodo = async () => {
+    if (!user) {
+      toast.error('Please sign in to add new todos');
+      return;
+    }
+    
     try {
       const newTodo = {
         title: `New Task ${todos.length + 1}`,
@@ -668,94 +176,41 @@ const FlowEditor = () => {
         priority: 'medium'
       };
       await todoService.createTodo(newTodo);
-      // Get the new todo data
-      const todoData = await todoService.getAllTodos();
-      setTodos(todoData as any);
-      // Find the new todo
-      const latestTodo = todoData[0];
-      // Add new node with default position, keep existing nodes as is
-      setNodes((currentNodes) => [
-        ...currentNodes,
-        {
-          id: `todo-${latestTodo.id}`,
-          type: 'todo',
-          position: { x: 250, y: 100 }, // default position for new node
-          data: {
-            todo: latestTodo,
-            onUpdate: handleTodoUpdate,
-            onDelete: handleTodoDelete,
-          },
-        },
-      ]);
+      await loadTodos(); // Reload to show new todo
+      toast.success('New todo created');
     } catch (error) {
       console.error('Failed to create todo:', error);
+      toast.error('Failed to create todo');
     }
   };
 
-  const refreshTodos = async () => {
-    try {
-      const todoData = await todoService.getAllTodos();
-    setTodos(todoData as any);
-      setNodes((currentNodes) =>
-        currentNodes.map((node) => {
-          if (node.type === 'todo') {
-            const todoId = parseInt(node.id.replace('todo-', ''));
-            const updatedTodo = todoData.find((t: any) => t.id === todoId);
-            if (updatedTodo) {
-              return {
-                ...node,
-                data: {
-                  ...node.data,
-                  todo: updatedTodo,
-                },
-              };
-            }
-          }
-          return node;
-        })
-      );
-    } catch (error) {
-      console.error('Failed to refresh todos:', error);
-    }
+  const refreshTodos = () => {
+    loadTodos();
+    toast.success('Todos refreshed');
   };
 
-  const saveFlow = async () => {
+  const saveFlow = async (silent = false) => {
+    if (isSaving) return;
+    
+    setIsSaving(true);
     try {
-      console.log('💾 Manual save triggered...', { nodes: nodes.length, edges: edges.length, currentFlowId });
-      console.log('📊 Sample node for save:', nodes[0]);
-      
-      if (currentFlowId) {
-        // Update existing flow
-        await flowService.updateFlow(currentFlowId, {
-          name: flowName,
-          flow_data: { nodes, edges }
-        });
-        console.log('✅ Manual save: Updated existing flow with ID:', currentFlowId);
-      } else {
-        // Create new flow
       await flowService.saveFlow({
         name: flowName,
         flow_data: { nodes, edges }
       });
-        // Get the flow ID from the result
-        const savedFlow = await flowService.getMostRecentFlow();
-        if (savedFlow) {
-          setCurrentFlowId(savedFlow.id);
-          console.log('✅ Manual save: Created new flow with ID:', savedFlow.id);
-        }
+      setLastSaved(new Date());
+      if (!silent) {
+        toast.success('Flow saved successfully');
       }
-      console.log('✅ Manual save completed successfully');
     } catch (error) {
-      console.error('❌ Manual save failed:', error);
+      console.error('Failed to save flow:', error);
+      if (!silent) {
+        toast.error('Failed to save flow');
+      }
+    } finally {
+      setIsSaving(false);
     }
   };
-
-  // Auto-save when flow name changes
-  useEffect(() => {
-    if (!isLoading) {
-      debouncedAutoSave();
-    }
-  }, [flowName, debouncedAutoSave, isLoading]);
 
   if (isLoading) {
     return (
@@ -770,15 +225,24 @@ const FlowEditor = () => {
       {/* Header */}
       <div className="bg-white border-b-2 border-black p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
-          <Input
-            value={flowName}
-            onChange={(e) => setFlowName(e.target.value)}
-            className="w-full sm:w-64 neo-brutal text-sm sm:text-base"
-          />
+          <div className="flex flex-col gap-1">
+            <Input
+              value={flowName}
+              onChange={(e) => setFlowName(e.target.value)}
+              className="w-full sm:w-64 neo-brutal text-sm sm:text-base"
+            />
+            {lastSaved && (
+              <span className="text-xs text-gray-600">
+                Auto-saved at {lastSaved.toLocaleTimeString()}
+              </span>
+            )}
+          </div>
           <div className="flex flex-wrap gap-2 sm:gap-3">
             <Button 
               onClick={addNewTodo} 
-              className="neo-brutal-pink bg-pink-accent hover:bg-pink-accent text-white font-bold text-xs sm:text-sm px-3 sm:px-4 py-2"
+              disabled={!user}
+              className="neo-brutal-pink bg-pink-accent hover:bg-pink-accent text-white font-bold text-xs sm:text-sm px-3 sm:px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              title={!user ? "Please sign in to add todos" : "Add new todo"}
             >
               <Plus size={14} className="mr-1 sm:mr-2" />
               Add Todo
@@ -789,28 +253,6 @@ const FlowEditor = () => {
             >
               <RefreshCw size={14} className="mr-1 sm:mr-2" />
               Refresh
-            </Button>
-            <Button 
-              onClick={() => {
-                console.log('Undo clicked, historyIndex:', historyIndex, 'history length:', history.length);
-                undo();
-              }}
-              disabled={historyIndex <= 0}
-              className="neo-brutal bg-white hover:bg-gray-100 text-black font-bold text-xs sm:text-sm px-3 sm:px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Undo2 size={14} className="mr-1 sm:mr-2" />
-              Undo {historyIndex > 0 ? `(${historyIndex})` : ''}
-            </Button>
-            <Button 
-              onClick={() => {
-                console.log('Redo clicked, historyIndex:', historyIndex, 'history length:', history.length);
-                redo();
-              }}
-              disabled={historyIndex >= history.length - 1}
-              className="neo-brutal bg-white hover:bg-gray-100 text-black font-bold text-xs sm:text-sm px-3 sm:px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Redo2 size={14} className="mr-1 sm:mr-2" />
-              Redo {historyIndex < history.length - 1 ? `(${history.length - historyIndex - 1})` : ''}
             </Button>
           </div>
         </div>
@@ -823,28 +265,12 @@ const FlowEditor = () => {
             Share
           </Button>
           <Button 
-            onClick={saveFlow} 
+            onClick={() => saveFlow()} 
+            disabled={isSaving}
             className="neo-brutal-purple bg-purple-accent hover:bg-purple-accent text-white font-bold text-xs sm:text-sm px-3 sm:px-4 py-2 flex-1 sm:flex-none"
           >
             <Save size={14} className="mr-1 sm:mr-2" />
-            Save Flow
-          </Button>
-          <Button 
-            onClick={async () => {
-              console.log('🧪 Test save clicked');
-              console.log('Current nodes:', nodes);
-              console.log('Current edges:', edges);
-              await saveFlow();
-            }} 
-            className="neo-brutal bg-white hover:bg-gray-100 text-black font-bold text-xs sm:text-sm px-3 sm:px-4 py-2 flex-1 sm:flex-none"
-          >
-            Test Save
-          </Button>
-          <Button 
-            onClick={runComprehensiveTest} 
-            className="neo-brutal bg-yellow-100 hover:bg-yellow-200 text-black font-bold text-xs sm:text-sm px-3 sm:px-4 py-2 flex-1 sm:flex-none"
-          >
-            Debug All
+            {isSaving ? 'Saving...' : 'Save Now'}
           </Button>
         </div>
       </div>
@@ -854,32 +280,16 @@ const FlowEditor = () => {
         <ReactFlow
           nodes={nodes}
           edges={edges}
-          onNodesChange={handleNodesChange}
-          onEdgesChange={handleEdgesChange}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
           onConnect={onConnect}
           nodeTypes={nodeTypes}
-          edgeTypes={edgeTypes}
           fitView
           attributionPosition="top-right"
           connectionMode={ConnectionMode.Loose}
           snapToGrid={true}
           snapGrid={[15, 15]}
           style={{ backgroundColor: '#ffffff' }}
-          deleteKeyCode="Delete"
-          multiSelectionKeyCode="Shift"
-          panOnDrag={true}
-          panOnScroll={false}
-          zoomOnScroll={true}
-          zoomOnPinch={true}
-          zoomOnDoubleClick={false}
-          preventScrolling={true}
-          nodesDraggable={true}
-          nodesConnectable={true}
-          elementsSelectable={true}
-          selectNodesOnDrag={false}
-          connectionRadius={30}
-          connectionLineStyle={{ stroke: '#000', strokeWidth: 2 }}
-          defaultEdgeOptions={{ type: 'curvy' }}
         >
           <Controls />
           <MiniMap />
