@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   ReactFlow,
@@ -69,9 +68,13 @@ const FlowEditor = () => {
       const todoData = await todoService.getAllTodos();
       setTodos(todoData as any);
       
-      // Try to load saved flow data
-      const flows = await flowService.getAllFlows();
-      const savedFlow = flows.find((flow: any) => flow.name === flowName);
+      // Try to load the most recently saved flow (better persistence)
+      const savedFlow = await flowService.getMostRecentFlow();
+
+      // If a saved flow exists, use its name as the current flow name
+      if (savedFlow) {
+        setFlowName(savedFlow.name);
+      }
       
       const todoNodes = todosToNodes(todoData as any, savedFlow?.flow_data);
       setNodes(todoNodes);
