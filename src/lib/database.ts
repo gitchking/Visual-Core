@@ -98,6 +98,30 @@ const checkAndMigrateDatabase = async () => {
     // User already exists, ignore error
     console.log('Default user already exists or error adding it:', error);
   }
+
+  // Check if updated_at column exists in flows table
+  try {
+    const stmt = db.prepare("PRAGMA table_info(flows)");
+    const columns = [];
+    while (stmt.step()) {
+      columns.push(stmt.getAsObject());
+    }
+    stmt.free();
+    
+    console.log('Flows table columns:', columns);
+    const hasUpdatedAt = columns.some((col: any) => col.name === 'updated_at');
+    if (!hasUpdatedAt) {
+      console.log('Adding updated_at column to flows table...');
+      db.run('ALTER TABLE flows ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP');
+      saveDatabase();
+      console.log('updated_at column added to flows table');
+    } else {
+      console.log('updated_at column already exists in flows table');
+    }
+  } catch (error) {
+    console.log('Error checking/migrating flows table:', error);
+  }
+
   console.log('Database migration completed');
 };
 
@@ -174,6 +198,7 @@ const initializeTables = async () => {
       name TEXT NOT NULL,
       flow_data TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users (id)
     )
   `);
